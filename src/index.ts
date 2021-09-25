@@ -51,6 +51,27 @@ if (require.main === module) {
     server.listen(port ?? 0, () =>
         logger.info(chalk`Listening on port {yellow ${(server.address() as AddressInfo).port}}`)
     );
+
+    for (const signal of [
+        "SIGABRT",
+        "SIGHUP",
+        "SIGINT",
+        "SIGQUIT",
+        "SIGTERM",
+        "SIGUSR1",
+        "SIGUSR2",
+        "SIGBREAK",
+    ]) {
+        process.on(signal, () => {
+            logger.info("Exiting...");
+            server.close(err => {
+                if (err) {
+                    logger.error(err);
+                }
+                server.unref();
+            });
+        });
+    }
 } else {
     // This is used for tests.
     module.exports = {

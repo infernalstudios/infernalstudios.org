@@ -23,8 +23,9 @@
   ],
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
-    "postbuild": "node scripts/postbuild.js",
+    "build": "yarn build:only && yarn build:post",
+    "build:only": "tsc",
+    "build:post": "node scripts/postbuild.js",
     "build:watch": "tsc -w & nodemon -w \"dist\" -e \"js map\" -x \"yarn postbuild\"",
     "format": "prettier --config .prettierrc.json --write src scripts *.json",
     "format:check": "prettier --config .prettierrc.json --check src scripts *.json",

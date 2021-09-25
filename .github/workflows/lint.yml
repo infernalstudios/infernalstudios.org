@@ -32,7 +32,7 @@ jobs:
         run: yarn install
 
       - name: Build
-        run: yarn build
+        run: yarn build:only
 
       - name: Lint Code
         run: yarn lint

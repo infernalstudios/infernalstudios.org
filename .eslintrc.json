@@ -7,10 +7,11 @@
   "extends": [
     "eslint:recommended",
     "plugin:@typescript-eslint/eslint-recommended",
-    "plugin:@typescript-eslint/recommended"
+    "plugin:@typescript-eslint/recommended",
+    "prettier"
   ],
   "rules": {},
-  "ignorePatterns": "test/*.test.js",
+  "ignorePatterns": [ "scripts/**/*.js" ],
   "parserOptions": {
     "ecmaVersion": 2020
   }

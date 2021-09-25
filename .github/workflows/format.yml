@@ -1,4 +1,4 @@
-name: Lint
+name: Format Check
 
 on: [ push, pull_request ]
 
@@ -31,8 +31,5 @@ jobs:
       - name: Install dependencies
         run: yarn install
 
-      - name: Build
-        run: yarn build
-
-      - name: Lint Code
-        run: yarn lint
+      - name: Check Code Formatting
+        run: yarn format:check

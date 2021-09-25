@@ -1,17 +1,36 @@
 {
   "name": "infernalstudios.org",
   "version": "1.0.0",
-  "main": "dist/index.js",
-  "esnext": "src/index.ts",
-  "author": "Infernal Studios <contact@infernalstudios.org>",
-  "license": "ARR",
   "private": true,
+  "description": "Source code for <https://infernalstudios.org>!",
+  "bugs": "https://github.com/infernalexp/infernalstudios.org/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/infernalexp/infernalstudios.org.git"
+  },
+  "license": "ARR",
+  "author": {
+    "name": "Infernal Studios",
+    "email": "contact@infernalstudios.org",
+    "url": "https://infernalstudios.org"
+  },
+  "contributors": [
+    {
+      "name": "Kārlis Čerņavskis",
+      "email": "contact@cernavskis.dev",
+      "url": "https://cernavskis.dev"
+    }
+  ],
+  "main": "dist/index.js",
   "scripts": {
-    "start": "node .",
     "build": "tsc",
-    "build:watch": "tsc -w",
+    "postbuild": "node scripts/postbuild.js",
+    "build:watch": "tsc -w & nodemon -w \"dist\" -e \"js map\" -x \"yarn postbuild\"",
+    "format": "prettier --config .prettierrc.json --write src scripts *.json",
+    "format:check": "prettier --config .prettierrc.json --check src scripts *.json",
     "lint": "eslint src",
-    "lint:fix": "eslint src --fix"
+    "lint:fix": "eslint src --fix",
+    "start": "node ."
   },
   "dependencies": {
     "chalk": "^4.1.2",
@@ -31,6 +50,14 @@
     "@typescript-eslint/eslint-plugin": "^4.26.1",
     "@typescript-eslint/parser": "^4.26.1",
     "eslint": "^7.28.0",
+    "eslint-config-prettier": "^8.3.0",
+    "prettier": "^2.4.1",
+    "prettier-package-json": "^2.6.0",
+    "prettier-plugin-organize-imports": "^2.3.4",
     "typescript": "^4.3.2"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "yarn": ">=1.22.0"
   }
 }

@@ -1,21 +1,21 @@
 /* Copyright (c) 2021 Infernal Studios, All Rights Reserved unless otherwise explicitly stated. */
 * {
-    font-family: "Helvetica Neue", sans-serif;
+  font-family: "Helvetica Neue", sans-serif;
 }
 
 header {
-    padding-top: 8px;
+  padding-top: 8px;
 }
 
 main {
-    padding-left: 16px;
-    padding-right: 16px;
+  padding-left: 16px;
+  padding-right: 16px;
 }
 
 footer {
-    position: absolute;
-    bottom: 0;
+  position: absolute;
+  bottom: 0;
 
-    padding-left: 16px;
-    padding-right: 16px;
+  padding-left: 16px;
+  padding-right: 16px;
 }

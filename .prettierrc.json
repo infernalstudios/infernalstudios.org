@@ -6,25 +6,14 @@
   "endOfLine": "lf",
   "htmlWhitespaceSensitivity": "css",
   "insertPragma": false,
-  "printWidth": 100,
+  "printWidth": 120,
   "quoteProps": "as-needed",
   "proseWrap": "preserve",
   "requirePragma": false,
   "semi": true,
   "singleQuote": false,
-  "tabWidth": 4,
+  "tabWidth": 2,
   "useTabs": false,
   "trailingComma": "es5",
-  "overrides": [
-    {
-      "files": ["*.json"],
-      "options": {
-        "tabWidth": 2
-      }
-    }
-  ],
-  "plugins": [
-    "prettier-plugin-organize-imports",
-    "prettier-package-json"
-  ]
+  "plugins": ["prettier-plugin-organize-imports", "prettier-package-json"]
 }

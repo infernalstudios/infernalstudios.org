@@ -29,10 +29,10 @@ jobs:
             ${{ runner.os }}-yarn-
 
       - name: Install dependencies
-        run: npm install
+        run: yarn
 
       - name: Build Code
-        run: npm run build:only
+        run: yarn build:only
 
   format:
     runs-on: ubuntu-latest
@@ -60,10 +60,10 @@ jobs:
             ${{ runner.os }}-yarn-
 
       - name: Install dependencies
-        run: npm install
+        run: yarn
 
       - name: Check Format
-        run: npm run format:check
+        run: yarn format:check
 
   lint:
     runs-on: ubuntu-latest
@@ -91,10 +91,10 @@ jobs:
             ${{ runner.os }}-yarn-
 
       - name: Install dependencies
-        run: npm install
+        run: yarn
 
       - name: Lint Code
-        run: npm run lint
+        run: yarn lint
 
   # test:
   #   runs-on: ubuntu-latest
@@ -119,7 +119,7 @@ jobs:
   #           ${{ runner.OS }}-cache-
 
   #     - name: Install dependencies
-  #       run: npm install
+  #       run: yarn
 
   #     - name: Run Tests
-  #       run: npm run test
+  #       run: yarn test

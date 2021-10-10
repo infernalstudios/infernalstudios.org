@@ -67,6 +67,29 @@ app.use("/api", (_req, res) => {
 
 app.use("/api.md", express.static(path.join(__dirname, "../API_REFERENCE.md")));
 
+// Redirect middleware
+app.use((req, res, next) => {
+  let path = req.url;
+  if (req.url.indexOf("?") !== -1) {
+    path = req.url.slice(0, req.url.indexOf("?"));
+  }
+  if (path[0] === "/") {
+    path = path.slice(1, path.length);
+  }
+  if (path[path.length - 1] === "/") {
+    path = path.slice(0, -1);
+  }
+
+  const redirect = database.redirects.getByPath(path);
+  if (redirect) {
+    res.status(301);
+    res.header("Location", redirect.url);
+    res.end();
+  } else {
+    next();
+  }
+});
+
 if (require.main === module) {
   let port: string | number | undefined = process.env.PORT;
   if (typeof port === "string") {

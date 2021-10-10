@@ -38,6 +38,11 @@ export class Database extends PatchDatabase {
       )
     );
 
+    this.redirects.table.on("stateChange", () => {
+      // @ts-expect-error getAllCache is private
+      delete this.redirects.getAllCache;
+    });
+
     this.tokens = new TokenManager(this);
     this.addTable(
       "tokens",

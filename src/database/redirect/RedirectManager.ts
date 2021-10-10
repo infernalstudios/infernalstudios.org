@@ -41,8 +41,16 @@ export class RedirectManager {
     return this.table.get(id);
   }
 
+  private getAllCache?: Redirect[];
   public getAll(): Redirect[] {
-    return this.table.getAll();
+    if (!this.getAllCache) {
+      this.getAllCache = this.table.getAll();
+    }
+    return this.getAllCache;
+  }
+
+  public getByPath(path: string): Redirect | undefined {
+    return this.getAll().find(redirect => redirect.path === path);
   }
 
   public delete(id: string): Redirect | undefined {

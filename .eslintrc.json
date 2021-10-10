@@ -9,7 +9,6 @@
     "prettier"
   ],
   "rules": {},
-  "ignorePatterns": "test/*.test.ts",
   "parserOptions": {
     "ecmaVersion": 2020
   }

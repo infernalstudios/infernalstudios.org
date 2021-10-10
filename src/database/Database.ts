@@ -1,12 +1,23 @@
-import { Database as PatchDatabase, DatabaseOptions, Table } from "patchdb";
+import { Logger } from "logerian";
+import { Database as PatchDatabase, DatabaseOptions as PatchDatabaseOptions, Table } from "patchdb";
+import { Token } from "./auth/Token";
+import { TokenManager } from "./auth/TokenManager";
 import { Redirect } from "./redirect/Redirect";
 import { RedirectManager } from "./redirect/RedirectManager";
 
+interface DatabaseOptions extends PatchDatabaseOptions {
+  logger: Logger;
+}
+
 export class Database extends PatchDatabase {
   public redirects: RedirectManager;
+  public tokens: TokenManager;
+  private logger: Logger;
 
   public constructor(options: DatabaseOptions) {
     super(options);
+
+    this.logger = options.logger;
 
     this.redirects = new RedirectManager(this);
     this.addTable(
@@ -26,5 +37,23 @@ export class Database extends PatchDatabase {
         redirect => ({ id: redirect.id, name: redirect.name, url: redirect.url, path: redirect.path })
       )
     );
+
+    this.tokens = new TokenManager(this);
+    this.addTable(
+      "tokens",
+      new Table(
+        true,
+        json => new Token(json.id as string, this.tokens.table),
+        token => ({ id: token.id })
+      )
+    );
+
+    this.once("ready", () => {
+      if (this.tokens.getAll().length === 0) {
+        this.logger.info("There are 0 API tokens in the database. Creating new token...");
+        const token = this.tokens.create();
+        this.logger.info(`\tToken: ${token.id}`);
+      }
+    });
   }
 }

@@ -549,6 +549,11 @@ doctrine@^3.0.0:
   dependencies:
     esutils "^2.0.2"
 
+dotenv@^10.0.0:
+  version "10.0.0"
+  resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-10.0.0.tgz#3d4227b8fb95f81096cdd2b66653fb2c7085ba81"
+  integrity sha512-rlBi9d8jpv9Sf1klPjNfFAuWDjKLwTIJJ/VxtoTwIR6hnZxcEOQCZg2oIL3MWBYw5GpUDKOEnND7LXTbIpQ03Q==
+
 ee-first@1.1.1:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/ee-first/-/ee-first-1.1.1.tgz#590c61156b0ae2f4f0255732a158b266bc56b21d"
@@ -1277,10 +1282,10 @@ parseurl@~1.3.3:
   resolved "https://registry.yarnpkg.com/parseurl/-/parseurl-1.3.3.tgz#9da19e7bee8d12dff0513ed5b76957793bc2e8d4"
   integrity sha512-CiyeOxFT/JZyN5m0z9PfXw4SCBJ6Sygz1Dpl0wqjlhDEGGBP1GnsUVEL0p63hoG1fcj3fHynXi9NYO4nWOL+qQ==
 
-patchdb@^1.0.2:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/patchdb/-/patchdb-1.1.0.tgz#59a81e2c76df7d3eb887e97917abcf3331fb8891"
-  integrity sha512-IxNi/IvEjRH4PeCoNJtePlrVwTyZliVlAj0A5a6hrB3WXyRj+4wlZgivKjyQPmpLNQ2VzGurf3PWvJhoK3OKXQ==
+patchdb@^1.1.1:
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/patchdb/-/patchdb-1.1.1.tgz#07e73212ec42f543aac83f9334e11ab9b7b500ca"
+  integrity sha512-sBZh9sTlZ6HOmbu/PDwu15v/x1NJX08BBG0bRWSyJpB2oO5/y1BAD+hc4/bDCS886bVj51+RLLl3jO7UJSIV1w==
   dependencies:
     fs-extra "^10.0.0"
 
@@ -1623,10 +1628,10 @@ type-is@~1.6.17, type-is@~1.6.18:
     media-typer "0.3.0"
     mime-types "~2.1.24"
 
-typescript@^4.5.0-dev.20211007:
-  version "4.5.0-dev.20211007"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-4.5.0-dev.20211007.tgz#da90b5547ff84e3e334e94414f674e3d6a1c5394"
-  integrity sha512-NUEjWBg7fo+w9DC6ffCeaJ+Oc8a99l7vmWDT2wWWPzh4TwZX7ELFmaOKY95ErEEbjDFdgUTEd5QDZwxSjKiq0Q==
+typescript@next:
+  version "4.5.0-dev.20211008"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-4.5.0-dev.20211008.tgz#d1d5460547ab08fb6edea4d259ae8f2b684e3eca"
+  integrity sha512-8TgcWvX2BZk3z/aokY6Fmzn58nPB0TNs41NlRk/giDKE8PdzXNhOoR5uDkkPT7N6MRJNlE9zviFTvWNtCUYMqw==
 
 universalify@^2.0.0:
   version "2.0.0"

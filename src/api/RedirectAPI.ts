@@ -1,142 +1,76 @@
 import express, { Express } from "express";
-import yup, { ValidationError } from "yup";
+import { object as yupObject, string as yupString, ValidationError } from "yup";
 import { Database } from "../database/Database";
+import { Redirect } from "../database/redirect/Redirect";
+import { getAuthMiddleware } from "../util/APIUtil";
 
 export function getAPI(database: Database): Express {
   const RedirectAPI = express();
+  RedirectAPI.disable("x-powered-by");
 
   RedirectAPI.use(express.json());
 
-  RedirectAPI.get("/", (_req, res) => {
+  RedirectAPI.get("/", async (_req, res) => {
     const redirects = database.redirects
       .getAll()
-      .map(redirect => ({ id: redirect.id, name: redirect.name, url: redirect.url, path: redirect.path }));
+      .map(redirect => ({ id: redirect.id, name: redirect.name, url: redirect.url }));
+    res.status(200);
     res.json(redirects);
     res.end();
   });
 
-  const postRedirectSchema = yup.object().shape({
-    id: yup
-      .string()
+  const postRedirectSchema = yupObject({
+    id: yupString()
       .trim()
-      .matches(/^[\w\d-_]+$/i)
-      .required(),
-    name: yup
-      .string()
+      .matches(/^[a-z0-9_-]+$/i)
+      .required()
+      .typeError("An id must only contain characters [a-z A-Z 0-9 _ -]"),
+    name: yupString()
       .trim()
-      .matches(/^[\w\d-_ /\\]+$/i),
-    url: yup.string().url().required(),
-    path: yup
-      .string()
+      .matches(/^[a-z0-9_/\\-]+$/i)
+      .typeError("A name must only contain characters [a-z A-Z 0-9 _ - / \\] and spaces"),
+    url: yupString().trim().url().required().typeError("A url must be a valid url"),
+    path: yupString()
       .trim()
-      .matches(/^\/?\w+(\/\w+)*\/?$/i)
-      .required(),
+      .matches(/^\/?([a-z0-9_-]+\/?)+$/i)
+      .required()
+      .typeError(
+        "A path must only contain characters [a-z A-Z 0-9 _ - /], and must not have multiple consecutive '/' characters"
+      ),
   });
 
+  RedirectAPI.post("/", getAuthMiddleware(database));
   RedirectAPI.post("/", async (req, res) => {
     let id: string, name: string, url: string, path: string;
+
     try {
-      const validated = await postRedirectSchema.validate({
-        id: req.body.id,
-        name: req.body.name,
-        url: req.body.url,
-        path: req.body.path,
-      });
-      id = validated.id;
-      url = validated.url;
-      path = validated.path;
-      name = validated.name ?? validated.path;
+      const validatedSchema = await postRedirectSchema.validate(req.body);
+      id = validatedSchema.id;
+      url = validatedSchema.url;
+      path = validatedSchema.path;
+
+      // Remove preceding and trailing slashes from path
+      if (path[0] === "/") {
+        path = path.slice(1, path.length);
+      }
+      if (path[path.length - 1] === "/") {
+        path = path.slice(0, -1);
+      }
+
+      if (path.replaceAll("/", "").length < 4) {
+        throw new ValidationError("A path must contain at least 4 non-/ characters");
+      }
+
+      name = validatedSchema.name ?? path;
     } catch (err: unknown) {
       if (err instanceof ValidationError) {
         res.status(400);
-        return res.json({
-          errors: err.errors.map(message => `Validation error: ${message}`),
+        res.json({
+          errors: err.errors.map(message => `Validation Error: ${message}`),
         });
+        return res.end();
       } else {
-        res.status(500);
-        if (err instanceof Error) {
-          return res.json({
-            errors: [err.message],
-          });
-        } else {
-          throw err;
-        }
-      }
-    }
-
-    if (database.redirects.has(id)) {
-      res.status(400);
-      return res.json({
-        errors: [`A redirect with an id of "${id}" already exists`],
-      });
-    } else {
-      const redirects = database.redirects.getAll();
-      if (redirects.findIndex(redirect => redirect.path === path) !== -1) {
-        res.status(400);
-        return res.json({
-          errors: [`A redirect with a path of "${path}" already exists`],
-        });
-      }
-      const newRedirect = database.redirects.create(id, { path, name, url });
-
-      return res.json({
-        id: newRedirect.id,
-        name: newRedirect.name,
-        url: newRedirect.url,
-        path: newRedirect.path,
-      });
-    }
-  });
-
-  RedirectAPI.get("/:id", (req, res) => {
-    const redirect = database.redirects.get(req.params.id);
-    if (redirect) {
-      return res.json({
-        id: redirect.id,
-        name: redirect.name,
-        url: redirect.url,
-        path: redirect.path,
-      });
-    } else {
-      res.status(404);
-      return res.json({
-        errors: [`A redirect with an id of "${req.params.id}" cannot be found`],
-      });
-    }
-  });
-
-  const putRedirectIdSchema = yup.object().shape({
-    name: yup
-      .string()
-      .trim()
-      .matches(/^[\w\d-_ /\\]+$/i),
-    url: yup.string().url(),
-    path: yup
-      .string()
-      .trim()
-      .matches(/^\/?\w+(\/\w+)*\/?$/i),
-  });
-
-  RedirectAPI.put("/:id", async (req, res) => {
-    const redirect = database.redirects.get(req.params.id);
-    if (redirect) {
-      let name: string | undefined, url: string | undefined, path: string | undefined;
-      try {
-        const validated = await putRedirectIdSchema.validate({
-          name: req.body.name,
-          url: req.body.url,
-          path: req.body.path,
-        });
-        url = validated.url;
-        path = validated.path;
-        name = validated.name;
-      } catch (err: unknown) {
-        if (err instanceof ValidationError) {
-          res.status(400);
-          return res.json({
-            errors: err.errors.map(message => `Validation error: ${message}`),
-          });
-        } else {
+        if (process.env.NODE_ENV === "development") {
           res.status(500);
           if (err instanceof Error) {
             return res.json({
@@ -145,60 +79,185 @@ export function getAPI(database: Database): Express {
           } else {
             throw err;
           }
+        } else {
+          throw err;
         }
       }
+    }
 
-      if (path) {
-        const redirects = database.redirects.getAll();
-        if (redirects.findIndex(redirect => redirect.path === path) !== -1) {
-          res.status(400);
-          return res.json({
-            errors: [`A redirect with a path of "${path}" already exists`],
-          });
-        }
-      }
-
-      if (name) {
-        redirect.name = name;
-      }
-      if (url) {
-        redirect.url = url;
-      }
-      if (path) {
-        redirect.path = path;
-      }
-
-      return res.json({
-        id: redirect.id,
-        name: redirect.name,
-        url: redirect.url,
-        path: redirect.path,
+    if (database.redirects.has(id)) {
+      res.status(400);
+      res.json({
+        errors: [`A redirect with an id of "${id}" already exists`],
       });
-    } else {
+      return res.end();
+    }
+
+    if (database.redirects.getAll().findIndex(redirect => redirect.path === path) !== -1) {
+      res.status(400);
+      res.json({
+        errors: [`A redirect with a path of "${path}" already exists`],
+      });
+      return res.end();
+    }
+
+    const redirect = database.redirects.create(id, { path, name, url });
+
+    res.status(201);
+    res.json({
+      id: redirect.id,
+      name: redirect.name,
+      path: redirect.path,
+      url: redirect.url,
+    });
+    return res.end();
+  });
+
+  RedirectAPI.get("/:id", async (req, res) => {
+    if (!database.redirects.has(req.params.id)) {
       res.status(404);
-      return res.json({
+      res.json({
         errors: [`A redirect with an id of "${req.params.id}" cannot be found`],
       });
+      return res.end();
     }
+
+    // Explicit cast to Redirect because we know the redirect exists.
+    const redirect = database.redirects.get(req.params.id) as Redirect;
+
+    res.status(200);
+    res.json({
+      id: redirect.id,
+      name: redirect.name,
+      path: redirect.path,
+      url: redirect.url,
+    });
+    return res.end();
+  });
+
+  const putRedirectSchema = yupObject({
+    name: yupString()
+      .trim()
+      .matches(/^[a-z0-9_/\\-]+$/i)
+      .typeError("A name must only contain characters [a-z A-Z 0-9 _ - / \\] and spaces"),
+    url: yupString().trim().url().typeError("A url must be a valid url"),
+    path: yupString()
+      .trim()
+      .matches(/^\/?([a-z0-9_-]+\/?)+$/i)
+      .typeError(
+        "A path must only contain characters [a-z A-Z 0-9 _ - /], and must not have multiple consecutive '/' characters"
+      ),
+  });
+
+  RedirectAPI.put("/:id", getAuthMiddleware(database));
+  RedirectAPI.put("/:id", async (req, res) => {
+    const id = req.params.id;
+    if (!database.redirects.has(id)) {
+      res.status(404);
+      res.json({
+        errors: [`A redirect with an id of "${id}" cannot be found`],
+      });
+      return res.end();
+    }
+
+    let name: string | undefined, url: string | undefined, path: string | undefined;
+
+    try {
+      const validatedSchema = await putRedirectSchema.validate(req.body);
+      url = validatedSchema.url;
+      path = validatedSchema.path;
+
+      if (path) {
+        // Remove preceding and trailing slashes from path
+        if (path[0] === "/") {
+          path = path.slice(1, path.length);
+        }
+        if (path[path.length - 1] === "/") {
+          path = path.slice(0, -1);
+        }
+
+        if (path.replaceAll("/", "").length < 4) {
+          throw new ValidationError("A path must contain at least 4 non-/ characters");
+        }
+      }
+
+      name = validatedSchema.name;
+    } catch (err: unknown) {
+      if (err instanceof ValidationError) {
+        res.status(400);
+        res.json({
+          errors: err.errors.map(message => `Validation Error: ${message}`),
+        });
+        return res.end();
+      } else {
+        if (process.env.NODE_ENV === "development") {
+          res.status(500);
+          if (err instanceof Error) {
+            return res.json({
+              errors: [err.message],
+            });
+          } else {
+            throw err;
+          }
+        } else {
+          throw err;
+        }
+      }
+    }
+
+    if (database.redirects.getAll().findIndex(redirect => redirect.path === path) !== -1) {
+      res.status(400);
+      res.json({
+        errors: [`A redirect with a path of "${path}" already exists`],
+      });
+      return res.end();
+    }
+
+    // Explicit cast to Redirect because we know the redirect exists.
+    const redirect = database.redirects.get(id) as Redirect;
+
+    if (name) {
+      redirect.name = name;
+    }
+
+    if (path) {
+      redirect.path = path;
+    }
+
+    if (url) {
+      redirect.url = url;
+    }
+
+    res.status(200);
+    res.json({
+      id: redirect.id,
+      name: redirect.name,
+      path: redirect.path,
+      url: redirect.url,
+    });
+    return res.end();
   });
 
   RedirectAPI.delete("/:id", async (req, res) => {
-    const redirect = database.redirects.get(req.params.id);
-    if (redirect) {
-      database.redirects.delete(redirect.id);
-
-      return res.json({
-        id: redirect.id,
-        name: redirect.name,
-        url: redirect.url,
-        path: redirect.path,
-      });
-    } else {
+    if (!database.redirects.has(req.params.id)) {
       res.status(404);
-      return res.json({
+      res.json({
         errors: [`A redirect with an id of "${req.params.id}" cannot be found`],
       });
+      return res.end();
     }
+
+    // Explicit cast to Redirect because we know the redirect exists.
+    const redirect = database.redirects.delete(req.params.id) as Redirect;
+
+    res.status(200);
+    res.json({
+      id: redirect.id,
+      name: redirect.name,
+      path: redirect.path,
+      url: redirect.url,
+    });
+    return res.end();
   });
 
   return RedirectAPI;

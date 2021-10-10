@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>API Reference</title>
+    <link rel="prefetch" href="/api.md" />
+    <link rel="stylesheet" href="/css/markdown.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/hyrious/github-markdown-css@main/github-markdown.css" />
+    <script>
+      function render() {
+        try {
+          fetch("/api.md")
+            .then(res => res.text())
+            .then(fetchedDocument =>
+              fetch("https://api.github.com/markdown/raw", {
+                method: "POST",
+                headers: {
+                  Accept: "application/vnd.github.v3+json",
+                  "Content-Type": "text/plain",
+                },
+                body: fetchedDocument,
+              })
+            )
+            .then(res => res.text())
+            .then(renderedDocument => {
+              document.body.innerHTML = renderedDocument;
+
+              document.body.querySelectorAll("*").forEach(e => {
+                if (e.id.startsWith("user-content-")) {
+                  e.id = e.id.replace("user-content-", "");
+                }
+              });
+
+              document.body.querySelectorAll('[href="#api-reference"]').forEach(e => {
+                e.href = "javascript:void";
+                e.addEventListener("click", () => {
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                  return false;
+                });
+              });
+            });
+        } catch (err) {
+          document.body.innerHTML =
+            "<h1>It seems an error has occurred. Please, refresh the page, or, if this error persists, contact the developers of this site.</h1>";
+        }
+      }
+    </script>
+  </head>
+  <body class="markdown-body">
+    <h1 align="center">Loading...</h1>
+    <script>
+      // We're calling this here so that we render the markdown AFTER we load the body of the document.
+      render();
+    </script>
+  </body>
+</html>

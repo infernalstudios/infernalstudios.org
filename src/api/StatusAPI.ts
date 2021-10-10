@@ -1,9 +1,12 @@
 import express, { Express } from "express";
 
 export const StatusAPI: Express = express();
+StatusAPI.disable("x-powered-by");
 
-StatusAPI.use("/", (_req, res) => {
+StatusAPI.get("/", async (_req, res) => {
+  res.status(200);
   res.json({
     status: "ok",
   });
+  return res.end();
 });

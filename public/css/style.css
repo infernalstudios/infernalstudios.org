@@ -5,6 +5,7 @@
 
 header {
   padding-top: 8px;
+  text-align: center;
 }
 
 main {
@@ -13,9 +14,22 @@ main {
 }
 
 footer {
-  position: absolute;
-  bottom: 0;
-
+  margin-top: 64px;
   padding-left: 16px;
   padding-right: 16px;
+}
+
+.mods table {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.mods h4 {
+  text-align: center;
+}
+
+.mods img.mod-logo {
+  margin: 0px;
+  width: 26vw;
+  height: auto;
 }

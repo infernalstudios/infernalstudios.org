@@ -1,0 +1,45 @@
+openapi: "3.0.1"
+
+info:
+  title: Infernal Studios API
+  version: "1.0"
+  description: |
+    This API facilitates the needs of Infernal Studios to provide its
+    services cleanly and automatically, such as the Forge update checker,
+    shortened links (redirects), etc.
+  contact:
+    name: Kārlis Čerņavskis (SwanX1)
+    email: swan@infernalstudios.org
+    url: cernavskis.dev
+  termsOfService: https://example.com
+
+servers:
+  - url: https://infernalstudios.org/api
+    description: |
+      Official Infernal Studios API.
+      Clients must not expect outdated versions of the API to be supported and
+      served at this URL.
+
+# components:
+#   schemas:
+
+security:
+  - api_key: []
+paths:
+  /status:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: ["status"]
+                properties:
+                  status:
+                    type: string
+                    description: |
+                      The status of the API.
+                      Only possible value is "ok".
+                example: { "status": "ok" }

@@ -1,15 +1,12 @@
 // Copyright (c) 2021 Infernal Studios, All Rights Reserved unless otherwise explicitly stated.
 import chalk from "chalk";
-import cors from "cors";
 import { config as envconfig } from "dotenv";
-import express from "express";
 import fs from "fs-extra";
 import http from "http";
-import { coloredLog, getLoggerLevelName, Logger, LoggerLevel } from "logerian";
-import morgan from "morgan";
+import { coloredIdentifier, coloredLog, getLoggerLevelName, Logger, LoggerLevel } from "logerian";
 import { AddressInfo } from "net";
 import path from "path";
-import { getAPI } from "./api/APIManager";
+import { getApp } from "./app";
 import { Database } from "./database/Database";
 
 envconfig({ path: path.join(__dirname, "../.env") });
@@ -17,7 +14,7 @@ envconfig({ path: path.join(__dirname, "../.env") });
 const logfile = path.join(__dirname, `../log/${new Date().toISOString()}.txt`);
 fs.ensureFileSync(logfile);
 
-const logger = new Logger({
+const mainLogger = new Logger({
   streams: [
     {
       level: process.env.VERBOSE === "true" ? LoggerLevel.DEBUG : LoggerLevel.INFO,
@@ -32,92 +29,58 @@ const logger = new Logger({
   ],
 });
 
-const database = new Database({ path: path.join(__dirname, "../data.json"), autosave: 15_000, logger });
+const logger = new Logger({
+  identifier: "Main",
+  identifierPrefix: (a, b) => coloredIdentifier(34, 90)(a, b) + "\t",
+  streams: [
+    {
+      level: LoggerLevel.DEBUG,
+      stream: mainLogger,
+    },
+  ],
+});
 
-const app = express();
-app.disable("x-powered-by");
-if (typeof process.env.TRUST_PROXY === "undefined") {
-  app.set("trust proxy", false);
-} else if (!Number.isNaN(Number(process.env.TRUST_PROXY))) {
-  app.set("trust proxy", Number(process.env.TRUST_PROXY));
-} else if (["true", "false"].includes(process.env.TRUST_PROXY)) {
-  app.set("trust proxy", Boolean(process.env.TRUST_PROXY));
-} else {
-  app.set("trust proxy", process.env.TRUST_PROXY);
+if (!process.env.DATABASE_URL) {
+  logger.fatal("DATABASE_URL is not set in .env");
+  process.exit(1);
 }
 
-app.use(
-  morgan("dev", {
-    stream: { write: s => logger.debug(s.trimEnd()) },
-    skip: req => /^\/(js|css)/.test(req.url),
-  })
-);
-app.use(cors({ origin: "*" }));
+const database = new Database({ connectionString: process.env.DATABASE_URL, logger: mainLogger });
 
-app.use(express.static(path.join(__dirname, "../public")));
-
-app.use("/api", getAPI(database));
-app.use("/api", (_req, res) => {
-  res.status(404);
-  res.json({
-    errors: ["The specified endpoint could not be found."],
-  });
-  res.end();
-});
-
-app.use("/api.md", express.static(path.join(__dirname, "../API_REFERENCE.md")));
-
-// Redirect middleware
-app.use((req, res, next) => {
-  let path = req.url;
-  if (req.url.indexOf("?") !== -1) {
-    path = req.url.slice(0, req.url.indexOf("?"));
-  }
-  if (path[0] === "/") {
-    path = path.slice(1, path.length);
-  }
-  if (path[path.length - 1] === "/") {
-    path = path.slice(0, -1);
-  }
-
-  const redirect = database.redirects.getByPath(path);
-  if (redirect) {
-    res.status(301);
-    res.header("Location", redirect.url);
-    res.end();
-  } else {
-    next();
-  }
-});
+const app = getApp(database, mainLogger);
 
 if (require.main === module) {
-  let port: string | number | undefined = process.env.PORT;
-  if (typeof port === "string") {
-    port = Number(port);
-  }
-  const server = http.createServer(app);
-  server.listen(port ?? 0, () =>
-    logger.info(chalk`Listening on port {yellow ${(server.address() as AddressInfo).port}}`)
-  );
+  void (async function main() {
+    let port: string | number | undefined = process.env.PORT;
+    if (typeof port === "string") {
+      port = Number(port);
+    }
 
-  database.start();
+    const server = http.createServer(app);
 
-  for (const signal of ["SIGABRT", "SIGHUP", "SIGINT", "SIGQUIT", "SIGTERM", "SIGUSR1", "SIGUSR2", "SIGBREAK"]) {
-    process.on(signal, () => {
-      // We clear the line to get rid of nasty ^C characters.
-      process.stdout.clearLine(0);
-      process.stdout.cursorTo(0);
-      logger.info(chalk`Recieved signal {yellow ${signal}}`);
-      logger.info("Exiting...");
-      database.close();
-      server.close(err => {
-        if (err) {
-          logger.error(err);
-        }
-        server.unref();
+    await database.connect();
+
+    server.listen(port ?? 0, () =>
+      logger.info(chalk`Listening on port {yellow ${(server.address() as AddressInfo).port}}`)
+    );
+
+    for (const signal of ["SIGABRT", "SIGHUP", "SIGINT", "SIGQUIT", "SIGTERM", "SIGUSR1", "SIGUSR2", "SIGBREAK"]) {
+      process.on(signal, () => {
+        // We clear the line to get rid of nasty ^C characters.
+        process.stdout.clearLine(0);
+        process.stdout.cursorTo(0);
+        logger.info(chalk`Recieved signal {yellow ${signal}}`);
+        logger.info("Exiting...");
+        database.close();
+        server.close(err => {
+          if (err) {
+            logger.error(err);
+          }
+          server.unref();
+        });
       });
-    });
-  }
+    }
+  })();
 } else {
   // This is used for tests.
   module.exports = {

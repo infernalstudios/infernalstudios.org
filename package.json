@@ -33,7 +33,7 @@
     "prebuild": "yarn format:check && yarn lint",
     "prepare": "husky install",
     "start": "node .",
-    "start:dev": "nodemon -w \"dist\" -x \"yarn start\" & yarn build:watch"
+    "start:dev": "nodemon --delay 2 -w \"dist\" -x \"clear && yarn start\" & yarn build:watch"
   },
   "dependencies": {
     "chalk": "^4.1.2",

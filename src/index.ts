@@ -14,7 +14,7 @@ envconfig({ path: path.join(__dirname, "../.env") });
 const logfile = path.join(__dirname, `../log/${new Date().toISOString()}.txt`);
 fs.ensureFileSync(logfile);
 
-const mainLogger = new Logger({
+export const mainLogger = new Logger({
   streams: [
     {
       level: process.env.VERBOSE === "true" ? LoggerLevel.DEBUG : LoggerLevel.INFO,
@@ -45,9 +45,9 @@ if (!process.env.DATABASE_URL) {
   process.exit(1);
 }
 
-const database = new Database({ connectionString: process.env.DATABASE_URL, logger: mainLogger });
+export const database = new Database({ connectionString: process.env.DATABASE_URL, logger: mainLogger });
 
-const app = getApp(database, mainLogger);
+export const app = getApp(database, mainLogger);
 
 if (require.main === module) {
   void (async function main() {
@@ -81,9 +81,4 @@ if (require.main === module) {
       });
     }
   })();
-} else {
-  // This is used for tests.
-  module.exports = {
-    app,
-  };
 }

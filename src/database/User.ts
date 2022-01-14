@@ -7,22 +7,22 @@ export class User {
   private password: string;
   private salt: string;
   private permissions: string[];
-  private database: Database;
+  #database: Database;
 
   public constructor(user: UserSchema, database: Database) {
     this.id = user.id;
     this.password = user.password;
     this.salt = user.salt;
     this.permissions = user.permissions;
-    this.database = database;
+    this.#database = database;
   }
 
-  public async delete(): Promise<void> {
-    return await this.database.sql.select("*").from("users").where({ id: this.id }).del();
+  public async delete(): Promise<number> {
+    return await this.#database.sql.select("*").from("users").where({ id: this.id }).del();
   }
 
   public async getTokens(): Promise<Token[]> {
-    return await this.database.tokens.getByUser(this.id);
+    return await this.#database.tokens.getByUser(this.id);
   }
 
   public getUsername(): string {
@@ -43,7 +43,7 @@ export class User {
 
   public async setUsername(username: string): Promise<void> {
     const newUsername = (
-      await this.database.sql.from("users").where({ id: this.id }).update({ id: username }).returning("id")
+      await this.#database.sql.from("users").where({ id: this.id }).update({ id: username }).returning("id")
     )[0];
     this.id = newUsername;
   }
@@ -51,7 +51,7 @@ export class User {
   public async setPassword(password: string): Promise<void> {
     const hashedPassword = await hashPassword(password, this.salt);
     const newPassword = (
-      await this.database.sql
+      await this.#database.sql
         .from("users")
         .where({ id: this.id })
         .update({ password: hashedPassword })

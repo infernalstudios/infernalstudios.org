@@ -5,13 +5,13 @@ export class Token {
   private id: string;
   private user: string;
   private permissions: string[];
-  private database: Database;
+  #database: Database;
 
   public constructor(token: TokenSchema, database: Database) {
     this.id = token.id;
     this.user = token.user;
     this.permissions = token.permissions;
-    this.database = database;
+    this.#database = database;
   }
 
   public getId(): string {
@@ -19,7 +19,11 @@ export class Token {
   }
 
   public async getUser(): Promise<User> {
-    return await this.database.users.get(this.user);
+    const user = await this.#database.users.get(this.user);
+    if (!user) {
+      throw new Error("User not found in database, this should never happen");
+    }
+    return user;
   }
 
   public getPermissions(): string[] {
@@ -32,7 +36,7 @@ export class Token {
 
   public async setPermissions(): Promise<void> {
     const permissions = (
-      await this.database.sql
+      await this.#database.sql
         .from("tokens")
         .where({ id: this.id })
         .update({ permissions: this.permissions })
@@ -41,8 +45,8 @@ export class Token {
     this.permissions = permissions;
   }
 
-  public async delete(): Promise<void> {
-    return await this.database.tokens.delete(this.id);
+  public async delete(): Promise<number> {
+    return await this.#database.tokens.delete(this.id);
   }
 }
 
@@ -51,3 +55,7 @@ export interface TokenSchema {
   user: string;
   permissions: string[];
 }
+
+type ReadablePermissions = "user";
+type WritablePermissions = "user" | "redirect" | "mod";
+export type Permission = `${ReadablePermissions}:read` | `${WritablePermissions}:write` | "admin" | "superadmin";

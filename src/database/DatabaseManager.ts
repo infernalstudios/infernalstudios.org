@@ -1,3 +1,4 @@
+import { hashPassword } from "../util/Util";
 import { Database } from "./Database";
 import { Mod, ModSchema } from "./Mod";
 import { Redirect, RedirectSchema } from "./Redirect";
@@ -5,11 +6,19 @@ import { Token, TokenSchema } from "./Token";
 import { User, UserSchema } from "./User";
 
 export class DatabaseManager<Schema extends { id: string } = { id: string }, SchemaClass = unknown> {
+  public database: Database;
+  protected name: string;
+  protected classConstructor: (schema: Schema, database: Database) => SchemaClass;
+
   public constructor(
-    public database: Database,
-    protected name: string,
-    protected classConstructor: (schema: Schema, database: Database) => SchemaClass
-  ) {}
+    database: Database,
+    name: string,
+    classConstructor: (schema: Schema, database: Database) => SchemaClass
+  ) {
+    this.database = database;
+    this.name = name;
+    this.classConstructor = classConstructor;
+  }
 
   public async getAll(): Promise<SchemaClass[]> {
     return (await this.getAllJSON()).map(schema => this.classConstructor(schema, this.database));
@@ -25,12 +34,16 @@ export class DatabaseManager<Schema extends { id: string } = { id: string }, Sch
     return this.classConstructor(newSchemaClass[0], this.database);
   }
 
-  public async get(id: string): Promise<SchemaClass> {
+  public async get(id: string): Promise<SchemaClass | undefined> {
     const schema = await this.database.sql.select("*").from(this.name).where({ id });
-    return this.classConstructor(schema[0], this.database);
+    if (schema.length !== 0) {
+      return this.classConstructor(schema[0], this.database);
+    } else {
+      return undefined;
+    }
   }
 
-  public async delete(id: string): Promise<void> {
+  public async delete(id: string): Promise<number> {
     return this.database.sql.from(this.name).where({ id }).del();
   }
 }
@@ -46,9 +59,13 @@ export class RedirectManager extends DatabaseManager<RedirectSchema, Redirect> {
     super(database, "redirects", (schema, database) => new Redirect(schema, database));
   }
 
-  public async getByPath(path: string): Promise<Redirect> {
+  public async getByPath(path: string): Promise<Redirect | undefined> {
     const redirect = await this.database.sql.select("*").from(this.name).where({ path });
-    return new Redirect(redirect[0], this.database);
+    if (redirect.length !== 0) {
+      return new Redirect(redirect[0], this.database);
+    } else {
+      return undefined;
+    }
   }
 }
 
@@ -68,8 +85,19 @@ export class UserManager extends DatabaseManager<UserSchema, User> {
     super(database, "users", (schema, database) => new User(schema, database));
   }
 
-  public async getByToken(token: string): Promise<User> {
-    const user = await (await this.database.tokens.get(token)).getUser();
-    return user;
+  public override async create(user: UserSchema): Promise<User> {
+    user.password = await hashPassword(user.password, user.salt);
+    const newSchemaClass = await this.database.sql.insert(user).into(this.name).returning("*");
+    return this.classConstructor(newSchemaClass[0], this.database);
+  }
+
+  public async getByToken(tokenId: string): Promise<User | undefined> {
+    const token = await this.database.tokens.get(tokenId);
+    if (token) {
+      const user = await token.getUser();
+      return user;
+    } else {
+      return undefined;
+    }
   }
 }

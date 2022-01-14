@@ -125,9 +125,9 @@ export class Database {
       this.logger.debug("Table users doesn't exist, creating...");
       await this.sql.schema.createTable("users", table => {
         table.string("id", 255).index().primary().notNullable();
-        table.string("password", 255).notNullable();
-        table.string("salt", 255).notNullable();
-        table.specificType("permissions", "varchar(255) array").notNullable();
+        table.string("password", 128).notNullable();
+        table.string("salt", 32).notNullable();
+        table.specificType("permissions", "varchar(64) array").notNullable();
       });
     }
   }
@@ -140,7 +140,7 @@ export class Database {
         table.string("name", 255).notNullable();
         table.string("url", 511).notNullable();
         table.string("minecraft", 255).notNullable().index();
-        table.string("changelog", 2047).notNullable();
+        table.string("changelog", 4095).notNullable();
         table.string("loader", 255).notNullable().index();
         table.string("mod", 255).notNullable();
         table.jsonb("dependencies").notNullable();

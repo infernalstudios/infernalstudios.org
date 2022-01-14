@@ -1,13 +1,14 @@
-import { pbkdf2 } from "crypto";
+import { pbkdf2, randomBytes } from "crypto";
 import { NextFunction, Request, Response } from "express";
 import { Knex } from "knex";
 import { coloredIdentifier, Logger, LoggerLevel } from "logerian";
 import { formatWithOptions } from "util";
 import { Database } from "../database/Database";
+import { Permission } from "../database/Token";
 
 export function getAuthMiddleware(
   database: Database,
-  permissions: string[]
+  permissions: Permission[]
 ): (req: Request, res: Response, next: NextFunction) => void {
   return async (req, res, next) => {
     if (!req.headers.authorization) {
@@ -20,10 +21,21 @@ export function getAuthMiddleware(
     }
 
     const token = await database.tokens.get(req.headers.authorization);
-    if (permissions.every(permission => token.hasPermission(permission))) {
+
+    if (!token) {
       res.status(401);
       res.json({
         errors: ["The provided token is invalid"],
+      });
+
+      return res.end();
+    }
+
+    if (permissions.every(permission => token.hasPermission(permission))) {
+      res.status(403);
+      res.json({
+        errors: ["Insufficient permissions"],
+        details: permissions.filter(permission => !token.hasPermission(permission)),
       });
 
       return res.end();
@@ -42,6 +54,13 @@ export function hashPassword(password: string, salt: string): Promise<string> {
       resolve(derivedKey.toString("hex"));
     })
   );
+}
+
+export function randomString(length = 32): string {
+  return randomBytes(length)
+    .toString("hex")
+    .padStart(length * 2, "0")
+    .slice(0, length);
 }
 
 export function createKnexLogger(logger: Logger): Knex.Logger {

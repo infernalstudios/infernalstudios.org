@@ -3,3 +3,4 @@ dist
 log
 data.json
 .env
+.vscode

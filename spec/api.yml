@@ -7,10 +7,13 @@ info:
     This API facilitates the needs of Infernal Studios to provide its
     services cleanly and automatically, such as the Forge update checker,
     shortened links (redirects), etc.
+
+    The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+    "SHOULD", "SHOULD NOT", "RECOMMENDED",  "MAY", and "OPTIONAL" in this
+    document are to be interpreted as described in [RFC 2119](https://datatracker.ietf.org/doc/html/rfc2119).
   contact:
-    name: Kārlis Čerņavskis (SwanX1)
-    email: swan@infernalstudios.org
-    url: cernavskis.dev
+    name: Infernal Studios
+    email: contact@infernalstudios.org
   termsOfService: https://example.com
 
 servers:
@@ -28,6 +31,11 @@ security:
 paths:
   /status:
     get:
+      summary: Get API status
+      description: |
+        Returns the status of the API. Make sure to parse the JSON response,
+        and only validate the given fields, because more could be changed in
+        the future.
       responses:
         "200":
           description: OK
@@ -40,6 +48,10 @@ paths:
                   status:
                     type: string
                     description: |
-                      The status of the API.
-                      Only possible value is "ok".
+                      Only possible values are `"ok"` and `"maintainance"`.
+                      This may change in the future.
+
+                      If this value is `"maintainance"`, the API is undergoing
+                      maintainance and other endpoints should not be expected
+                      to work.
                 example: { "status": "ok" }

@@ -9,6 +9,7 @@
     "prettier"
   ],
   "rules": {},
+  "ignorePatterns": ["scripts/**/*.js", "docs/**/*.js", "dist/**/*.js"],
   "parserOptions": {
     "ecmaVersion": 2020
   }

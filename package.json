@@ -26,8 +26,12 @@
     "build": "yarn build:only",
     "build:only": "tsc",
     "build:watch": "tsc -w",
-    "format:check": "prettier --config .prettierrc.json --check spec src public *.json .*.json",
-    "format": "prettier --config .prettierrc.json --write spec src public *.json .*.json",
+    "predocs": "node scripts/clearDirectory.js docs",
+    "docs": "redoc-cli bundle spec/api.yml --dereferenced --ext yml --lint --output docs/index.html --title \"Infernal Studios API\"",
+    "postdocs": "node scripts/postdocs.js docs/index.html",
+    "docs:lint": "redoc-cli lint spec/api.yml",
+    "format:check": "prettier --config .prettierrc.json --check spec src public *.json .*.json scripts",
+    "format": "prettier --config .prettierrc.json --write spec src public *.json .*.json scripts",
     "lint:fix": "eslint src --fix",
     "lint": "eslint src",
     "prebuild": "yarn format:check && yarn lint",
@@ -62,6 +66,7 @@
     "prettier": "^2.4.1",
     "prettier-package-json": "^2.6.0",
     "prettier-plugin-organize-imports": "^2.3.4",
+    "redoc-cli": "^0.13.2",
     "typescript": "~4.5.0"
   },
   "engines": {

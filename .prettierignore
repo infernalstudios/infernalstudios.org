@@ -3,3 +3,6 @@ dist
 log
 data.json
 .env
+dist/**/*.js
+docs/**/*.js
+scripts/**/*.js

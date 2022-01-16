@@ -1,4 +1,4 @@
-name: Check
+name: CI/CD
 
 on: [ push, pull_request ]
 
@@ -123,3 +123,47 @@ jobs:
 
   #     - name: Run Tests
   #       run: yarn test
+
+  generate-docs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    if: success() && github.event_name == 'push' && github.ref == 'refs/heads/stable'
+    needs: [ build, format, lint ]
+    steps:
+      - name: Use NodeJS v16
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+      - name: Generate and publish documentation
+        env:
+          DIRECTORY: "./docs"
+        run: |
+          gitdir=`mktemp -d`
+          moddir=`mktemp -d`
+          git clone "https://github.com/$GITHUB_REPOSITORY.git" "$gitdir" --depth=1 --progress --single-branch --verbose
+          cd "$gitdir"
+          git config advice.detachedHead false
+          git checkout --force "$GITHUB_SHA"
+          yarn
+          yarn docs
+          mv -vf "$gitdir/$DIRECTORY"/* $moddir
+          cd "$moddir"
+          git init
+          git remote add origin "https://$GITHUB_ACTOR:${{ secrets.GITHUB_TOKEN }}@github.com/$GITHUB_REPOSITORY.git"
+          echo "This is an automated branch. Please do not commit to or change any files in it." >> README
+          git add . -v
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git branch -m docs
+          git commit --verbose -m "
+          $GITHUB_SHA
+          
+          This is an automated commit by a GitHub workflow.
+          It contains generated documentation from the main branch of this repository.
+          Action: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+          "
+          git push origin docs --force --verbose
+          cd ~
+          rm -rf "$gitdir"
+          rm -rf "$moddir"

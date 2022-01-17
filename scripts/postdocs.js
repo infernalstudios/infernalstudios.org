@@ -5,9 +5,8 @@ const { exec, spawnSync } = require("child_process");
 const fs = require("fs/promises");
 const { constants: fsConstants } = require("fs");
 const path = require("path");
-const { createHash } = require("crypto");
 
-process.chdir(path.resolve(module.path));
+process.chdir(__dirname);
 
 void async function main() {
   if (require.main !== module) return;
@@ -35,13 +34,21 @@ void async function main() {
   }
   const packageJson = JSON.parse(await fs.readFile("package.json"));
   
-  if (!moduleExists("parse5")) {
-    console.log("Dependencies not met, installing...");
-    let command;
-    if (!packageJson.dependencies?.parse5) {
-      command = "yarn add parse5";
-    } else {
-      command = "yarn install --production --frozen-lockfile --non-interactive";
+  const dependencies = ["parse5", "csso", "htmlmin", "terser"];
+  if (!moduleExists(dependencies)) {
+    console.log("Dependencies not met, installing");
+    let command = "yarn add";
+    if (packageJson.dependencies) {
+      let normalInstall = true;
+      for (const dependency of dependencies) {
+        if (!(dependency in packageJson.dependencies)) {
+          normalInstall = false;
+          command += " " + dependency;
+        }
+      }
+      if (normalInstall) {
+        command = "yarn install --production --frozen-lockfile --non-interactive";
+      }
     }
     console.log(`\x1b[90m$ ${command}\x1b[39m`);
     const [installProcess, installProcessPromise] = promisifyExec(command, {});
@@ -58,14 +65,25 @@ void async function main() {
     console.log(`\x1b[90m$ ${process.argv.join(" ")}\x1b[39m`);
 
     spawnSync(process.argv[0], [...process.argv.slice(1)], { stdio: "inherit", cwd: previousDir });
+    process.exit(0);
   }
 
   const parse5 = require("parse5");
-  console.log("Reading file...");
+  const { minify: cssMinify } = require("csso");
+  const htmlMinify = require("htmlmin");
+  const { minify: jsMinify } = require("terser");
+  console.log("Reading file");
   const documentContent = (await fs.readFile(filename)).toString();
-  console.log("Parsing file...");
+  console.log("Parsing file");
   const document = parse5.parse(documentContent);
 
+  console.log("Injecting custom code");
+  const script = parse5.parse(`<script> </script>`).childNodes[0].childNodes[0].childNodes[0];
+  script.childNodes[0].value = (await fs.readFile(path.join(__dirname, "postdocs/injected.js"))).toString();
+  document.childNodes[1].childNodes[0].childNodes.unshift(script);
+  script.parentNode = document.childNodes[1].childNodes[0];
+
+  let k = 0;
   /** @type {{ [name: string]: string; }} */
   const extracted = {};
   /**
@@ -73,9 +91,13 @@ void async function main() {
    */
   function recurse(node) {
     if (node.nodeName === "script") {
-      let data = node.childNodes[0].value;
-      // data = data.replace(`,s.createElement(Xv,null,s.createElement("a",{target:"_blank",rel:"noopener noreferrer",href:"https://github.com/Redocly/redoc"},"Documentation Powered by ReDoc")`, "");
-      const src = getSHA256(data) + ".js";
+      let data = "";
+      if (node.childNodes[0]) {
+        data = node.childNodes[0].value;
+      } else {
+        console.log("Something has gone wrong, script node has no child nodes (it should have a text node!)");
+      }
+      const src = (k++) + ".js";
       extracted[src] = data;
       const oldAttrs = node.attrs;
       node.attrs = [];
@@ -101,8 +123,13 @@ void async function main() {
         }
       );
     } else if (node.nodeName === "style") {
-      const data = node.childNodes[0].value;
-      const src = getSHA256(data) + ".css";
+      let data = "";
+      if (node.childNodes[0]) {
+        data = node.childNodes[0].value;
+      } else {
+        console.log("Something has gone wrong, style node has no child nodes (it should have a text node!)");
+      }
+      const src = (k++) + ".css";
       extracted[src] = data;
       const oldAttrs = node.attrs;
       node.nodeName = "link";
@@ -135,46 +162,48 @@ void async function main() {
     }
   }
 
-  console.log("Modifying document...");
+  console.log("Modifying document");
   recurse(document);
-
-  console.log("Injecting custom code...");
-  const script = parse5.parse(`
-    <script>
-      document.addEventListener("DOMContentLoaded", () => {
-        const observer = new MutationObserver(mutations => {
-          outerLoop: for (const mutation of mutations) {
-            if (mutation.type === "childList") {
-              for (const node of mutation.addedNodes) {
-                if (node.nodeType === 1 && node.children[0]?.innerHTML === "Documentation Powered by ReDoc") {
-                  node.parentNode.removeChild(node);
-                  observer.disconnect();
-                  break outerLoop;
-                }
-              }
-            }
-          }
-        });
-        observer.observe(document, { childList: true, subtree: true });
-      });
-    </script>
-  `).childNodes[0].childNodes[0].childNodes[0];
-  document.childNodes[1].childNodes[0].childNodes.push(script);
-  script.parentNode = document.childNodes[1].childNodes[0];
 
   document.childNodes.push(script);
 
   async function writeDocument() {
-    console.log("Serializing document...");
+    console.log("Serializing document");
     const serialized = parse5.serialize(document);
-    console.log("Writing document...");
-    await fs.writeFile(filename, serialized);
+    const serializedMinified = htmlMinify(serialized);
+    console.log("Writing document");
+    await fs.writeFile(filename, serializedMinified);
   }
 
   const promises = [ writeDocument() ];
   for (const [src, data] of Object.entries(extracted)) {
-    console.log(`Writing to ${src}...`);
-    promises.push(fs.writeFile(path.join(path.dirname(filename), src), data));
+    promises.push((async () => {
+      console.log(`Minifying ${src}`);
+      let minifiedData;
+      if (src.endsWith(".js")) {
+        minifiedData = (await jsMinify(data, {
+          compress: {
+            arguments: true,
+            drop_console: true,
+            drop_debugger: true,
+            keep_infinity: true,
+            unsafe: true,
+          },
+          format: {
+            comments: false,
+
+          },
+          toplevel: true,
+          safari10: true,
+        })).code;
+      } else if (src.endsWith(".css")) {
+        minifiedData = cssMinify(data, { comments: false }).css;
+      } else {
+        minifiedData = data;
+      }
+      console.log(`Writing ${src}`);
+      fs.writeFile(path.join(path.dirname(filename), src), minifiedData);
+    })());
   }
 
   await Promise.all(promises);
@@ -192,7 +221,9 @@ function nodeHasClass(node, className) {
 
 function moduleExists(request) {
   try {
-    require.resolve(request);
+    for (let i = 0; i < request.length; i++) {
+      require.resolve(request[i]);
+    }
     return true;
   } catch (e) {
     return false;
@@ -266,8 +297,4 @@ async function accessBool(filename, mode) {
   } catch (e) {
     return false;
   }
-}
-
-function getSHA256(data) {
-  return createHash("sha256").update(data).digest("hex");
 }

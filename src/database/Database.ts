@@ -60,11 +60,10 @@ export class Database {
   private async setup(): Promise<void> {
     this.logger.debug(chalk`Setting up table {green 'mods'}...`);
     const modsPromise = this.setupModsTable().then(() => this.logger.debug(chalk`Table {green 'mods'} setup`));
-    const versionsPromise = modsPromise.then(() => {
+    const versionsPromise = modsPromise.then(async () => {
       this.logger.debug(chalk`Setting up table {green 'versions'}...`);
-      return this.setupVersionsTable().then(() => {
-        this.logger.debug(chalk`Table {green 'versions'} setup`);
-      });
+      await this.setupVersionsTable();
+      this.logger.debug(chalk`Table {green 'versions'} setup`);
     });
 
     this.logger.debug(chalk`Setting up table {green 'redirects'}...`);
@@ -73,11 +72,10 @@ export class Database {
     );
     this.logger.debug(chalk`Setting up table {green 'users'}...`);
     const usersPromise = this.setupUsersTable().then(() => this.logger.debug(chalk`Table {green 'users'} setup`));
-    const tokensPromise = usersPromise.then(() => {
+    const tokensPromise = usersPromise.then(async () => {
       this.logger.debug(chalk`Setting up table {green 'tokens'}...`);
-      return this.setupTokensTable().then(() => {
-        this.logger.debug(chalk`Table {green 'tokens'} setup`);
-      });
+      await this.setupTokensTable();
+      this.logger.debug(chalk`Table {green 'tokens'} setup`);
     });
 
     await Promise.all([modsPromise, versionsPromise, redirectsPromise, usersPromise, tokensPromise]);
@@ -115,6 +113,7 @@ export class Database {
         table.string("id", 255).index().primary().notNullable();
         table.string("user", 255).index().notNullable();
         table.specificType("permissions", "varchar(255) array").notNullable();
+        table.integer("expiry").defaultTo(0x7fffffff);
         table.foreign("user").references("users.id").onDelete("CASCADE");
       });
     }

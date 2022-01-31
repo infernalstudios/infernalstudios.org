@@ -78,6 +78,13 @@ export class TokenManager extends DatabaseManager<TokenSchema, Token> {
     const tokens = await this.database.sql.select("*").from(this.name).where({ user });
     return tokens.map(token => new Token(token, this.database));
   }
+
+  public async clearExpired(): Promise<void> {
+    await this.database.sql
+      .from(this.name)
+      .where({ expiry: { "<": Date.now() / 1000 } })
+      .del();
+  }
 }
 
 export class UserManager extends DatabaseManager<UserSchema, User> {

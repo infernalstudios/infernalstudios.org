@@ -1,6 +1,7 @@
 import chalk from "chalk";
 import cors from "cors";
 import express, { Express } from "express";
+import helmet from "helmet";
 import { coloredIdentifier, Logger, LoggerLevel } from "logerian";
 import path from "path";
 import { getAPI } from "./api/APIManager";
@@ -62,6 +63,30 @@ export function getApp(database: Database, logger: Logger): Express {
   });
 
   app.use(cors({ origin: "*" }));
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        useDefaults: true,
+      },
+      crossOriginEmbedderPolicy: true,
+      crossOriginOpenerPolicy: {
+        policy: "same-origin",
+      },
+      crossOriginResourcePolicy: {
+        policy: "same-origin",
+      },
+      dnsPrefetchControl: true,
+      frameguard: true,
+      hidePoweredBy: true,
+      hsts: true,
+      ieNoOpen: true,
+      noSniff: true,
+      referrerPolicy: {
+        policy: "same-origin",
+      },
+      xssFilter: true,
+    })
+  );
 
   app.use(express.static(path.join(__dirname, "../public")));
 

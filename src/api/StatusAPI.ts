@@ -1,7 +1,6 @@
-import express, { Express } from "express";
+import { Router } from "express";
 
-export const StatusAPI: Express = express();
-StatusAPI.disable("x-powered-by");
+export const StatusAPI: Router = Router();
 
 StatusAPI.get("/", async (_req, res) => {
   res.status(200);

@@ -4,12 +4,14 @@ import { User } from "./User";
 export class Token {
   private id: string;
   private user: string;
+  private expiry: number;
   private permissions: string[];
   #database: Database;
 
   public constructor(token: TokenSchema, database: Database) {
     this.id = token.id;
     this.user = token.user;
+    this.expiry = token.expiry;
     this.permissions = token.permissions;
     this.#database = database;
   }
@@ -24,6 +26,22 @@ export class Token {
       throw new Error("User not found in database, this should never happen");
     }
     return user;
+  }
+
+  public getExpiry(): number {
+    return this.expiry;
+  }
+
+  public isExpired(): boolean {
+    return Date.now() / 1000 >= this.expiry;
+  }
+
+  public async setExpiry(expireTime: number): Promise<number> {
+    const expiry = (
+      await this.#database.sql.from("tokens").where({ id: this.id }).update({ expiry: expireTime }).returning("expiry")
+    )[0];
+    this.expiry = expiry;
+    return this.expiry;
   }
 
   public getPermissions(): string[] {
@@ -53,6 +71,7 @@ export class Token {
 export interface TokenSchema {
   id: string;
   user: string;
+  expiry: number;
   permissions: string[];
 }
 

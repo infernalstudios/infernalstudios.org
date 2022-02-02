@@ -8,7 +8,7 @@ import { Permission } from "../database/Token";
 
 export function getAuthMiddleware(
   database: Database,
-  permissions: Permission[]
+  permissions: Permission[] = []
 ): (req: Request, res: Response, next: NextFunction) => void {
   return async (req, res, next) => {
     if (!req.headers.authorization) {

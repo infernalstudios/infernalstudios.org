@@ -27,6 +27,7 @@ export interface DatabaseOptions {
 export class Database {
   private options: DatabaseOptions;
   private logger: Logger;
+  private intervals: NodeJS.Timeout[] = [];
   public sql: Knex = null as unknown as Knex; // Shut up typescript
   public mods: ModManager = new ModManager(this);
   public redirects: RedirectManager = new RedirectManager(this);
@@ -51,9 +52,13 @@ export class Database {
     });
 
     await this.setup();
+    this.intervals.push(
+      setInterval(() => this.tokens.clearExpired(), 1000 * 60) // Clear expired tokens every minute
+    );
   }
 
   public async close(): Promise<void> {
+    this.intervals.forEach(interval => clearInterval(interval));
     await this.sql.destroy();
   }
 
@@ -110,7 +115,7 @@ export class Database {
     if (!(await this.sql.schema.hasTable("tokens"))) {
       this.logger.debug("Table tokens doesn't exist, creating...");
       await this.sql.schema.createTable("tokens", table => {
-        table.string("id", 255).index().primary().notNullable();
+        table.string("id", 127).index().primary().notNullable();
         table.string("user", 255).index().notNullable();
         table.specificType("permissions", "varchar(255) array").notNullable();
         table.integer("expiry").defaultTo(0x7fffffff);

@@ -50,6 +50,7 @@
     "knex": "^1.0.1",
     "logerian": "^1.2.1",
     "pg": "^8.7.1",
+    "rate-limiter-flexible": "^2.3.6",
     "semver": "^7.3.5",
     "zod": "^3.11.6"
   },

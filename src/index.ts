@@ -105,11 +105,17 @@ if (require.main === module) {
         process.stdout.cursorTo(0);
         logger.info(chalk`Recieved signal {yellow ${signal}}`);
         logger.info("Exiting...");
-        database.close();
+        database.close()
+          .then(() => {
+            logger.info("Closed database connection.");
+          }).catch((err) => {
+            logger.error(err);
+          });
         server.close(err => {
           if (err) {
             logger.error(err);
           }
+          logger.info("Server closed.");
           server.unref();
         });
       });

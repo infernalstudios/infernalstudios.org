@@ -4,6 +4,7 @@ import express, { Express } from "express";
 import helmet from "helmet";
 import { coloredIdentifier, Logger, LoggerLevel } from "logerian";
 import path from "path";
+import { RateLimiterMemory } from "rate-limiter-flexible";
 import { getAPI } from "./api/APIManager";
 import { Database } from "./database/Database";
 
@@ -87,6 +88,33 @@ export function getApp(database: Database, logger: Logger): Express {
       xssFilter: true,
     })
   );
+
+  const rateLimit = new RateLimiterMemory({
+    points: 120,
+    duration: 60,
+  });
+
+  app.use((req, res, next) => {
+    rateLimit.consume(req.ip)
+      .then((rateLimiterRes) => {
+        res.setHeader("Retry-After", rateLimiterRes.msBeforeNext / 1000);
+        res.setHeader("X-RateLimit-Limit", rateLimit.points);
+        res.setHeader("X-RateLimit-Remaining", rateLimiterRes.remainingPoints);
+        res.setHeader("X-RateLimit-Reset", new Date(Date.now() + rateLimiterRes.msBeforeNext).getTime());
+        next();
+      })
+      .catch((rateLimiterRes) => {
+        res.setHeader("Retry-After", rateLimiterRes.msBeforeNext / 1000);
+        res.setHeader("X-RateLimit-Limit", rateLimit.points);
+        res.setHeader("X-RateLimit-Remaining", 0);
+        res.setHeader("X-RateLimit-Reset", new Date(Date.now() + rateLimiterRes.msBeforeNext).getTime());
+        res.status(429);
+        res.json({
+          errors: ["Too many requests"],
+        });
+        return res.end();
+      });
+  });
 
   app.use(express.static(path.join(__dirname, "../public")));
 

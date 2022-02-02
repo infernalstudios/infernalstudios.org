@@ -95,15 +95,16 @@ export function getApp(database: Database, logger: Logger): Express {
   });
 
   app.use((req, res, next) => {
-    rateLimit.consume(req.ip)
-      .then((rateLimiterRes) => {
+    rateLimit
+      .consume(req.ip)
+      .then(rateLimiterRes => {
         res.setHeader("Retry-After", rateLimiterRes.msBeforeNext / 1000);
         res.setHeader("X-RateLimit-Limit", rateLimit.points);
         res.setHeader("X-RateLimit-Remaining", rateLimiterRes.remainingPoints);
         res.setHeader("X-RateLimit-Reset", new Date(Date.now() + rateLimiterRes.msBeforeNext).getTime());
         next();
       })
-      .catch((rateLimiterRes) => {
+      .catch(rateLimiterRes => {
         res.setHeader("Retry-After", rateLimiterRes.msBeforeNext / 1000);
         res.setHeader("X-RateLimit-Limit", rateLimit.points);
         res.setHeader("X-RateLimit-Remaining", 0);

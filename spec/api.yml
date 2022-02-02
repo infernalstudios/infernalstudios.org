@@ -23,8 +23,26 @@ servers:
       Clients must not expect outdated versions of the API to be supported and
       served at this URL.
 
-# components:
-#   schemas:
+components:
+  securitySchemes:
+    login:
+      type: http
+      scheme: Basic
+      description: |
+        Basic authentication.
+        This is used for generating a temporary API key for the client.
+
+    token:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        A JSON Web Token (JWT) is a compact, self-contained, signed token that
+        represents an authenticated user. Read more: 
+        The token is used to authenticate the user and to authorize the user's
+        actions.
+        The token is issued by the server and is used to identify the user.
+        The token is sent in the Authorization header.
 
 security:
   - api_key: []

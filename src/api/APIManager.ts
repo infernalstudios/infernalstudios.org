@@ -1,11 +1,12 @@
 import { Router } from "express";
 import helmet from "helmet";
 import { Database } from "../database/Database";
+import { getAuthAPI } from "./AuthAPI";
 import { StatusAPI } from "./StatusAPI";
 
 // TODO: rembet to remove this
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function getAPI(_database: Database): Router {
+export function getAPI(database: Database): Router {
   const api = Router();
 
   // Make sure we don't let any content load, this is an API.
@@ -29,6 +30,7 @@ export function getAPI(_database: Database): Router {
   );
 
   api.use("/status", StatusAPI);
+  api.use("/auth", getAuthAPI(database));
 
   return api;
 }

@@ -6,6 +6,7 @@ export class Token {
   private user: string;
   private expiry: number;
   private permissions: string[];
+  private reason: string;
   #database: Database;
 
   public constructor(token: TokenSchema, database: Database) {
@@ -13,6 +14,7 @@ export class Token {
     this.user = token.user;
     this.expiry = token.expiry;
     this.permissions = token.permissions;
+    this.reason = token.reason;
     this.#database = database;
   }
 
@@ -63,8 +65,29 @@ export class Token {
     this.permissions = permissions;
   }
 
+  public getReason(): string {
+    return this.reason;
+  }
+
+  public async setReason(reason: string): Promise<void> {
+    const newReason = (
+      await this.#database.sql.from("tokens").where({ id: this.id }).update({ reason: reason }).returning("reason")
+    )[0];
+    this.reason = newReason;
+  }
+
   public async delete(): Promise<number> {
     return await this.#database.tokens.delete(this.id);
+  }
+
+  public toJson(): TokenSchema {
+    return {
+      id: this.id,
+      user: this.user,
+      expiry: this.expiry,
+      permissions: this.permissions,
+      reason: this.reason,
+    };
   }
 }
 
@@ -73,6 +96,7 @@ export interface TokenSchema {
   user: string;
   expiry: number;
   permissions: string[];
+  reason: string;
 }
 
 type ReadablePermissions = "user";

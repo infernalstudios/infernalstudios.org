@@ -1,8 +1,8 @@
-import { hashPassword } from "../util/Util";
+import { hashPassword, randomString } from "../util/Util";
 import { Database } from "./Database";
 import { Mod, ModSchema } from "./Mod";
 import { Redirect, RedirectSchema } from "./Redirect";
-import { Token, TokenSchema } from "./Token";
+import { Permission, Token, TokenSchema } from "./Token";
 import { User, UserSchema } from "./User";
 
 export class DatabaseManager<Schema extends { id: string } = { id: string }, SchemaClass = unknown> {
@@ -72,6 +72,21 @@ export class RedirectManager extends DatabaseManager<RedirectSchema, Redirect> {
 export class TokenManager extends DatabaseManager<TokenSchema, Token> {
   public constructor(database: Database) {
     super(database, "tokens", (schema, database) => new Token(schema, database));
+  }
+
+  public async createToken(user: string, permissions: Permission[], reason: string, expiry?: number): Promise<Token> {
+    return await super.create({
+      id: randomString(127),
+      user,
+      expiry: expiry ?? 0xffffffff,
+      permissions,
+      reason,
+    });
+  }
+
+  /** @deprecated Use {@link createToken} instead */
+  public override async create(token: TokenSchema): Promise<Token> {
+    return await super.create(token);
   }
 
   public async getByUser(user: string): Promise<Token[]> {

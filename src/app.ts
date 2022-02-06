@@ -54,7 +54,7 @@ export function getApp(database: Database, logger: Logger): Express {
       const elapsed = process.hrtime(startedAt);
       const elapsedMs = elapsed[0] * 1e3 + elapsed[1] / 1e6;
       webLogger.debug(
-        chalk`${req.ip.padEnd(15, " ")} - ${req.method.padEnd(4, " ")} ${req.originalUrl} {${color} ${
+        chalk`${(req.ip ?? "unknown ip").padEnd(15, " ")} - ${req.method.padEnd(4, " ")} ${req.originalUrl} {${color} ${
           res.statusCode
         }} ${elapsedMs.toFixed(3)}ms`
       );

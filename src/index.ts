@@ -1,126 +1,216 @@
 // Copyright (c) 2021 Infernal Studios, All Rights Reserved unless otherwise explicitly stated.
 import chalk from "chalk";
-import { config as envconfig } from "dotenv";
-import fs from "fs-extra";
-import http from "http";
-import { coloredIdentifier, coloredLog, getLoggerLevelName, Logger, LoggerLevel } from "logerian";
-import { AddressInfo } from "net";
+import { readFile } from "fs-extra";
+import { coloredLog, LoggerLevel } from "logerian";
+import minimist from "minimist";
 import path from "path";
-import { getApp } from "./app";
-import { Database } from "./database/Database";
-import { ERRORS, ERROR_KEYS } from "./util/Errors";
+import { main } from "./entrypoints/main";
+import { loadEnv } from "./util/Util";
 
-envconfig({ path: path.join(__dirname, "../.env") });
-
-const logfile = path.join(__dirname, `../log/${new Date().toISOString()}.txt`);
-fs.ensureFileSync(logfile);
-
-export const mainLogger = new Logger({
-  streams: [
-    {
-      level: process.env.VERBOSE === "true" ? LoggerLevel.DEBUG : LoggerLevel.INFO,
-      stream: process.stdout,
-      prefix: coloredLog,
+function handleArgs(rawArgv: string[]) {
+  const argv = minimist(rawArgv, {
+    alias: {
+      env: ["e"],
+      help: ["h"],
+      version: ["v"],
     },
-    {
-      level: LoggerLevel.DEBUG,
-      stream: fs.createWriteStream(logfile),
-      prefix: (level: LoggerLevel) => `[${new Date().toISOString()}] [${getLoggerLevelName(level)}] `,
+    boolean: ["help", "version"],
+    string: ["env"],
+    default: {
+      env: path.join(__dirname, "../.env"),
     },
-  ],
-});
+    unknown: arg => !arg?.startsWith("--"),
+  }) as minimist.ParsedArgs & {
+    env: string;
+    help: boolean;
+    version: boolean;
+  };
 
-const logger = new Logger({
-  identifier: "Main",
-  identifierPrefix: (a, b) => coloredIdentifier(34, 90)(a, b) + "\t",
-  streams: [
-    {
-      level: LoggerLevel.DEBUG,
-      stream: mainLogger,
-      intercept: ([errorCode, ...args]) => {
-        if (typeof errorCode === "symbol" && errorCode in ERRORS) {
-          const error = ERROR_KEYS[errorCode];
-          let outputString: string;
-          if (typeof error === "string") {
-            outputString = error;
-          } else {
-            outputString = error(...args);
-          }
-          return [`[${errorCode.toString()}]`, outputString];
-        } else {
-          return;
+  const commands: Record<string, () => PromiseLike<void>> = {
+    start: async () => {
+      if (argv.help) {
+        handleArgs(["help", "start"]);
+        process.exit(0);
+      }
+      if (argv.version) {
+        handleArgs(["--version"]);
+        process.exit(0);
+      }
+      const envErrors = await loadEnv(argv.env);
+      if (envErrors.length > 0) {
+        for (let i = 0; i < envErrors.length; i++) {
+          console.error(`${coloredLog(LoggerLevel.ERROR)} ${envErrors[i]}`);
         }
-      },
-    },
-  ],
-});
-
-if (!process.env.DATABASE_URL) {
-  logger.fatal(ERRORS.ENV_NOT_SET, "DATABASE_URL");
-  process.exit(1);
-}
-
-export const database = new Database({ connectionString: process.env.DATABASE_URL, logger: mainLogger });
-
-export const app = getApp(database, mainLogger);
-
-if (require.main === module) {
-  void (async function main() {
-    let port: string | number | undefined = process.env.PORT;
-    const host: string | undefined = process.env.HOST;
-    let socketPath: string | undefined = process.env.PATH;
-    if (typeof port === "string") {
-      port = Number(port);
-    }
-
-    const server = http.createServer(app);
-
-    await database.connect();
-
-    if (!process.env.LISTEN) {
-      logger.fatal(ERRORS.ENV_NOT_SET, "LISTEN");
-      process.exit(1);
-    } else if (process.env.LISTEN !== "tcp" && process.env.LISTEN !== "socket") {
-      logger.fatal(ERRORS.ENV_INVALID, "LISTEN", ["tcp", "socket"]);
-      process.exit(1);
-    }
-
-    if (process.env.LISTEN === "tcp") {
-      server.listen(port ?? 0, host ?? "127.0.0.1", () =>
-        logger.info(chalk`Listening on port {yellow ${(server.address() as AddressInfo).port}}`)
-      );
-    } else {
-      if (!socketPath) {
-        logger.fatal(ERRORS.ENV_NOT_SET, "PATH");
+        console.error(`${coloredLog(LoggerLevel.FATAL)} Environment variable check failed.`);
         process.exit(1);
       }
-      socketPath = path.normalize(socketPath);
-      server.listen(socketPath, () => logger.info(chalk`Listening on socket {yellow ${socketPath}}`));
-    }
+      await main();
+    },
+    test: async () => {
+      if (argv.help) {
+        handleArgs(["help", "test", argv._[1]]);
+        process.exit(0);
+      }
 
-    for (const signal of ["SIGABRT", "SIGHUP", "SIGINT", "SIGQUIT", "SIGTERM", "SIGUSR1", "SIGUSR2", "SIGBREAK"]) {
-      process.on(signal, () => {
-        // We clear the line to get rid of nasty ^C characters.
-        process.stdout.clearLine(0);
-        process.stdout.cursorTo(0);
-        logger.info(chalk`Recieved signal {yellow ${signal}}`);
-        logger.info("Exiting...");
-        database
-          .close()
-          .then(() => {
-            logger.info("Closed database connection.");
-          })
-          .catch(err => {
-            logger.error(err);
-          });
-        server.close(err => {
-          if (err) {
-            logger.error(err);
+      let failed = false;
+      switch (argv._[1]) {
+        case "env":
+          // eslint-disable-next-line no-case-declarations
+          const envErrors = await loadEnv(argv.env);
+          if (envErrors.length > 0) {
+            for (const error of envErrors) {
+              console.error(coloredLog(LoggerLevel.ERROR) + error);
+            }
+            console.error(coloredLog(LoggerLevel.FATAL) + " Environment variables are incorrect.");
+            process.exit(1);
+          } else {
+            console.log(`${coloredLog(LoggerLevel.INFO)} Environment variables are valid.`);
           }
-          logger.info("Server closed.");
-          server.unref();
+          break;
+        case undefined:
+          console.error(`${coloredLog(LoggerLevel.FATAL)} No test specified.`);
+          failed = true;
+          break;
+        default:
+          console.error(`${coloredLog(LoggerLevel.FATAL)} Unknown test "${argv._[1]}".`);
+          failed = true;
+          break;
+      }
+
+      if (failed) {
+        handleArgs(["help", "test"]);
+      }
+      process.exit(failed ? 1 : 0);
+    },
+    help: async () => {
+      let failed = false;
+      if (argv._.length <= 1 || argv._[1] === "help") {
+        console.log(
+          (
+            "\n" +
+            "Usage:\n" +
+            chalk`\t{bold.yellow node} {bold.cyan ${process.argv[1]}} <command> [options]\n` +
+            "\n" +
+            "Commands:\n" +
+            chalk`\t{bold.cyan start} - Starts the server\n` +
+            chalk`\t{bold.cyan test} - Runs tests\n` +
+            chalk`\t{bold.cyan help} - Prints this help message\n` +
+            chalk`\t{bold.cyan help} [command|option] - Prints the help message for a specified command or option\n`
+          )
+            .split("\n")
+            .map(line => `${coloredLog(LoggerLevel.INFO)}${line}`)
+            .join("\n")
+        );
+      } else {
+        switch (argv._[1]) {
+          case "start":
+            console.log(
+              (
+                "\n" +
+                "Starts the server.\n" +
+                "\n" +
+                "Usage:\n" +
+                chalk`\t{bold.yellow node} {bold.cyan ${process.argv[1]}} start [options]\n` +
+                "\n" +
+                "Options:\n" +
+                chalk`\t{bold.cyan --env} - Path to the environment variable file, defaults to ".env" in the project folder\n` +
+                chalk`\t{bold.cyan --help} - Prints this help message\n` +
+                chalk`\t{bold.cyan --version} - Prints the version\n`
+              )
+                .split("\n")
+                .map(line => `${coloredLog(LoggerLevel.INFO)}${line}`)
+                .join("\n")
+            );
+            break;
+          case "test":
+            if (argv._.length > 2) {
+              switch (argv._[2]) {
+                case "env":
+                  console.log(
+                    (
+                      "\n" +
+                      "Tests the environment variables.\n" +
+                      "\n" +
+                      "Usage:\n" +
+                      chalk`\t{bold.yellow node} {bold.cyan ${process.argv[1]}} test env [options]\n` +
+                      "\n" +
+                      "Options:\n" +
+                      chalk`\t{bold.cyan --env} - Path to the environment variable file, defaults to ".env" in the project folder\n` +
+                      chalk`\t{bold.cyan --help} - Prints this help message\n`
+                    )
+                      .split("\n")
+                      .map(line => `${coloredLog(LoggerLevel.INFO)}${line}`)
+                      .join("\n")
+                  );
+                  break;
+                default:
+                  console.error(`${coloredLog(LoggerLevel.FATAL)} Unknown test "${argv._[2]}".`);
+                  handleArgs(["help", "test"]);
+                  failed = true;
+                  break;
+              }
+            } else {
+              console.log(
+                (
+                  "\n" +
+                  "Runs tests.\n" +
+                  "\n" +
+                  "Usage:\n" +
+                  chalk`\t{bold.yellow node} {bold.cyan ${process.argv[1]}} test [options]\n` +
+                  "\n" +
+                  "Tests:\n" +
+                  chalk`\t{bold.yellow env} - Tests the environment variables\n` +
+                  "\n" +
+                  "Options:\n" +
+                  chalk`\t{bold.cyan --help} - Prints this help message or help for the test\n`
+                )
+                  .split("\n")
+                  .map(line => `${coloredLog(LoggerLevel.INFO)}${line}`)
+                  .join("\n")
+              );
+            }
+            break;
+        }
+      }
+
+      if (failed) process.exit(1);
+      return;
+    },
+  };
+
+  if (argv._.length === 0) {
+    if (argv.version) {
+      readFile(path.join(__dirname, "../package.json"))
+        .then(data => {
+          try {
+            const packageJson = JSON.parse(data.toString());
+            console.log(
+              `${coloredLog(LoggerLevel.INFO)} ${packageJson.name ?? "infernalstudios.org"} v${packageJson.version}`
+            );
+            process.exit(0);
+          } catch {
+            console.error(`${coloredLog(LoggerLevel.FATAL)} Could not parse package.json`);
+            process.exit(1);
+          }
+        })
+        .catch(error => {
+          console.error(`${coloredLog(LoggerLevel.FATAL)} Could not read package.json`);
+          console.error(error);
+          process.exit(1);
         });
-      });
+    } else if (argv.help) {
+      commands.help();
+    } else {
+      console.error(`${coloredLog(LoggerLevel.FATAL)} No command specified.`);
+      commands.help().then(() => process.exit(1));
     }
-  })();
+  } else if (argv._[0] in commands) {
+    commands[argv._[0]]();
+  } else {
+    console.error(`${coloredLog(LoggerLevel.FATAL)} Unknown command "${argv._[0]}".`);
+    commands.help();
+    process.exit(1);
+  }
 }
+
+handleArgs(process.argv.slice(2));

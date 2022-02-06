@@ -41,52 +41,48 @@ export async function main() {
 
   const app = getApp(database, mainLogger);
 
-  if (require.main === module) {
-    void (async function start() {
-      let port: string | number = process.env.PORT as string;
-      const host: string = process.env.HOST as string;
-      let socketPath: string = process.env.SOCKET as string;
-      if (typeof port === "string") {
-        port = Number(port);
-      }
+  let port: string | number = process.env.PORT as string;
+  const host: string = process.env.HOST as string;
+  let socketPath: string = process.env.SOCKET as string;
+  if (typeof port === "string") {
+    port = Number(port);
+  }
 
-      const server = http.createServer(app);
+  const server = http.createServer(app);
 
-      await database.connect();
+  await database.connect();
 
-      if (process.env.LISTEN === "tcp") {
-        server.listen(port ?? 0, host ?? "127.0.0.1", () =>
-          logger.info(chalk`Listening on port {yellow ${(server.address() as AddressInfo).port}}`)
-        );
-      } else {
-        socketPath = path.normalize(socketPath);
-        server.listen(socketPath, () => logger.info(chalk`Listening on socket {yellow ${socketPath}}`));
-      }
+  if (process.env.LISTEN === "tcp") {
+    server.listen(port ?? 0, host ?? "127.0.0.1", () =>
+      logger.info(chalk`Listening on port {yellow ${(server.address() as AddressInfo).port}}`)
+    );
+  } else {
+    socketPath = path.normalize(socketPath);
+    server.listen(socketPath, () => logger.info(chalk`Listening on socket {yellow ${socketPath}}`));
+  }
 
-      for (const signal of ["SIGABRT", "SIGHUP", "SIGINT", "SIGQUIT", "SIGTERM", "SIGUSR1", "SIGUSR2", "SIGBREAK"]) {
-        process.on(signal, () => {
-          // We clear the line to get rid of nasty ^C characters.
-          process.stdout.clearLine(0);
-          process.stdout.cursorTo(0);
-          logger.info(chalk`Recieved signal {yellow ${signal}}`);
-          logger.info("Exiting...");
-          database
-            .close()
-            .then(() => {
-              logger.info("Closed database connection.");
-            })
-            .catch(err => {
-              logger.error(err);
-            });
-          server.close(err => {
-            if (err) {
-              logger.error(err);
-            }
-            logger.info("Server closed.");
-            server.unref();
-          });
+  for (const signal of ["SIGABRT", "SIGHUP", "SIGINT", "SIGQUIT", "SIGTERM", "SIGUSR1", "SIGUSR2", "SIGBREAK"]) {
+    process.on(signal, () => {
+      // We clear the line to get rid of nasty ^C characters.
+      process.stdout.clearLine(0);
+      process.stdout.cursorTo(0);
+      logger.info(chalk`Recieved signal {yellow ${signal}}`);
+      logger.info("Exiting...");
+      database
+        .close()
+        .then(() => {
+          logger.info("Closed database connection.");
+        })
+        .catch(err => {
+          logger.error(err);
         });
-      }
-    })();
+      server.close(err => {
+        if (err) {
+          logger.error(err);
+        }
+        logger.info("Server closed.");
+        server.unref();
+      });
+    });
   }
 }

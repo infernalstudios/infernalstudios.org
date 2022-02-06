@@ -183,3 +183,10 @@ export async function loadEnv(envPath: string = path.join(__dirname, "../../.env
   }
   return errors;
 }
+
+export async function fileVisible(filename: string): Promise<boolean> {
+  return await fs.access(filename, fs.constants.F_OK).then(
+    () => true,
+    () => false
+  );
+}

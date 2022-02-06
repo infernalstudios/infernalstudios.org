@@ -1,0 +1,21 @@
+# This patch allows for express to handle async errors
+# This is backported functionality from 5.x:
+#  > Starting with Express 5, route handlers and middleware that return a Promise will call next(value) automatically when they reject or throw an error.
+# https://expressjs.com/en/guide/error-handling.html
+diff --git a/node_modules/express/lib/router/layer.js b/node_modules/express/lib/router/layer.js
+index 4dc8e86..2218954 100644
+--- a/node_modules/express/lib/router/layer.js
++++ b/node_modules/express/lib/router/layer.js
+@@ -92,7 +92,10 @@ Layer.prototype.handle_request = function handle(req, res, next) {
+   }
+ 
+   try {
+-    fn(req, res, next);
++    const promise = fn(req, res, next);
++    if (promise instanceof Promise) {
++      promise.catch(err => next(err));
++    }
+   } catch (err) {
+     next(err);
+   }
+

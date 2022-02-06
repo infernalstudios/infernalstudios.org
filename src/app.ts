@@ -1,10 +1,11 @@
 import chalk from "chalk";
 import cors from "cors";
-import express, { Express } from "express";
+import express, { Express, NextFunction, Request, Response } from "express";
 import helmet from "helmet";
 import { coloredIdentifier, Logger, LoggerLevel } from "logerian";
 import path from "path";
 import { RateLimiterMemory } from "rate-limiter-flexible";
+import { ZodError } from "zod";
 import { getAPI } from "./api/APIManager";
 import { Database } from "./database/Database";
 
@@ -126,6 +127,46 @@ export function getApp(database: Database, logger: Logger): Express {
       errors: ["The specified endpoint could not be found."],
     });
     res.end();
+  });
+
+  // Error handling
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- This is needed by express, error handlers use 4 arguments.
+  app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+    if (err instanceof ZodError) {
+      res.status(400);
+      res.json({
+        errors: err.errors,
+      });
+      res.end();
+    } else {
+      res.status(500);
+      logger.error(err);
+      if (process.env.NODE_ENV === "development") {
+        if (err instanceof Error) {
+          res.json({
+            errors: [
+              {
+                message: err.message,
+                stack: err.stack,
+                name: err.name,
+              },
+            ],
+          });
+        } else {
+          res.json({
+            errors: [
+              {
+                message: "An unknown error occurred. See the logs for more information.",
+              },
+            ],
+          });
+        }
+      } else {
+        res.json({
+          errors: ["An unexpected error occurred."],
+        });
+      }
+    }
   });
 
   // Redirect middleware

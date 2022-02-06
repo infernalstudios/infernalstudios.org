@@ -37,6 +37,7 @@
     "lint": "eslint src",
     "prebuild": "yarn format:check && yarn lint",
     "prepare": "husky install",
+    "postinstall": "node scripts/apply-patches.js",
     "start": "node . start",
     "start:dev": "nodemon --delay 2 -w \"dist\" -x \"clear && yarn start\" & yarn build:watch"
   },

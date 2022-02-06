@@ -97,7 +97,7 @@ export class TokenManager extends DatabaseManager<TokenSchema, Token> {
   public async clearExpired(): Promise<void> {
     await this.database.sql
       .from(this.name)
-      .where({ expiry: { "<": Date.now() / 1000 } })
+      .where("expiry", "<", Math.ceil(Date.now() / 1000))
       .del();
   }
 }

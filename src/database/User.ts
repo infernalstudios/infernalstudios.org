@@ -1,19 +1,19 @@
 import { hashPassword } from "../util/Util";
 import { Database } from "./Database";
-import { Permission, Token } from "./Token";
+import { Token } from "./Token";
 
 export class User {
   private id: string;
   private password: string;
   private salt: string;
-  private permissions: Permission[];
+  private permissions: string[];
   #database: Database;
 
   public constructor(user: UserSchema, database: Database) {
     this.id = user.id;
     this.password = user.password;
     this.salt = user.salt;
-    this.permissions = user.permissions as Permission[];
+    this.permissions = user.permissions;
     this.#database = database;
   }
 
@@ -33,12 +33,12 @@ export class User {
     return this.password;
   }
 
-  public getPermissions(): Permission[] {
+  public getPermissions(): string[] {
     return this.permissions;
   }
 
   public hasPermission(permission: string): boolean {
-    return this.permissions.includes(permission as Permission);
+    return this.permissions.some(p => p === permission || p === "admin" || p === "superadmin");
   }
 
   public async setUsername(username: string): Promise<void> {

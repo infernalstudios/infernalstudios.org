@@ -7,11 +7,22 @@ import { coloredIdentifier, Logger, LoggerLevel } from "logerian";
 import path from "path";
 import { formatWithOptions } from "util";
 import { Database } from "../database/Database";
-import { Permission } from "../database/Token";
+import { Token } from "../database/Token";
+import { User } from "../database/User";
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace Express {
+    interface Request {
+      token?: Token;
+      user?: User;
+    }
+  }
+}
 
 export function getAuthMiddleware(
   database: Database,
-  permissions: Permission[] = []
+  permissions: string[] = []
 ): (req: Request, res: Response, next: NextFunction) => void {
   return async (req, res, next) => {
     if (!req.headers.authorization) {
@@ -19,11 +30,18 @@ export function getAuthMiddleware(
       res.json({
         errors: ["A token is required for this endpoint"],
       });
-
       return res.end();
     }
 
-    const token = await database.tokens.get(req.headers.authorization);
+    if (req.headers.authorization.split(" ", 1)[0].toLowerCase() !== "bearer") {
+      res.status(401);
+      res.json({
+        errors: ["The authorization header must be of type 'Bearer'"],
+      });
+      return res.end();
+    }
+
+    const token = await database.tokens.get(req.headers.authorization.slice(7) /* Removes the "bearer " prefix */);
 
     if (!token) {
       res.status(401);
@@ -34,7 +52,9 @@ export function getAuthMiddleware(
       return res.end();
     }
 
-    if (permissions.every(permission => token.hasPermission(permission))) {
+    req.token = token;
+
+    if (!permissions.every(permission => token.hasPermission(permission))) {
       res.status(403);
       res.json({
         errors: ["Insufficient permissions"],
@@ -43,6 +63,9 @@ export function getAuthMiddleware(
 
       return res.end();
     }
+
+    const user = await token.getUser();
+    req.user = user;
 
     return next();
   };

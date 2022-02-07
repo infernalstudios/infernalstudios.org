@@ -51,7 +51,10 @@ export class Token {
   }
 
   public async hasPermission(permission: string): Promise<boolean> {
-    return this.permissions.includes(permission) && (await this.getUser()).hasPermission(permission);
+    return (
+      this.permissions.some(p => p === permission || p === "admin" || p === "superadmin") &&
+      (await this.getUser()).hasPermission(permission)
+    );
   }
 
   public async setPermissions(): Promise<void> {
@@ -89,6 +92,25 @@ export class Token {
       reason: this.reason,
     };
   }
+
+  private static PERMISSIONS: string[] = [
+    "self:modify", // Users can modify their own data. Users always have this permission, this can be granted to tokens
+    "user:modify", // Users can modify other users' data
+    "user:view", // Users can view other users' data
+    "token:delete", // Users can delete own tokens. Users always have this permission, this can be granted to tokens. Tokens can always delete themselves
+    "mod:create", // Users can create new mods
+    "mod:modify", // Users can modify existing mods
+    "mod:delete", // Users can delete existing mods
+    "redirect:create", // Users can create new redirects
+    "redirect:modify", // Users can modify existing redirects
+    "redirect:delete", // Users can delete existing redirects
+    "admin", // Users can do anything, except delete other users' data and accounts
+    "superadmin", // Users can do anything, including delete other users' data and accounts
+  ] as string[];
+
+  public static isPermissionValid(permission: string): boolean {
+    return Token.PERMISSIONS.includes(permission);
+  }
 }
 
 export interface TokenSchema {
@@ -98,7 +120,3 @@ export interface TokenSchema {
   permissions: string[];
   reason: string;
 }
-
-type ReadablePermissions = "user";
-type WritablePermissions = "user" | "redirect" | "mod";
-export type Permission = `${ReadablePermissions}:read` | `${WritablePermissions}:write` | "admin" | "superadmin";

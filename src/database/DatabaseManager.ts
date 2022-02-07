@@ -2,7 +2,7 @@ import { hashPassword, randomString } from "../util/Util";
 import { Database } from "./Database";
 import { Mod, ModSchema } from "./Mod";
 import { Redirect, RedirectSchema } from "./Redirect";
-import { Permission, Token, TokenSchema } from "./Token";
+import { Token, TokenSchema } from "./Token";
 import { User, UserSchema } from "./User";
 
 export class DatabaseManager<Schema extends { id: string } = { id: string }, SchemaClass = unknown> {
@@ -74,11 +74,11 @@ export class TokenManager extends DatabaseManager<TokenSchema, Token> {
     super(database, "tokens", (schema, database) => new Token(schema, database));
   }
 
-  public async createToken(user: string, permissions: Permission[], reason: string, expiry?: number): Promise<Token> {
+  public async createToken(user: string, permissions: string[], reason: string, expiry?: number): Promise<Token> {
     return await super.create({
       id: randomString(127),
       user,
-      expiry: expiry ?? 0xffffffff,
+      expiry: expiry ?? 0x7fffffff,
       permissions,
       reason,
     });

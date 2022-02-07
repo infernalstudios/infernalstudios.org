@@ -1,5 +1,6 @@
 import { Router } from "express";
 import helmet from "helmet";
+import { RateLimiterMemory } from "rate-limiter-flexible";
 import { Database } from "../database/Database";
 import { getAuthAPI } from "./AuthAPI";
 import { StatusAPI } from "./StatusAPI";
@@ -8,6 +9,33 @@ import { StatusAPI } from "./StatusAPI";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function getAPI(database: Database): Router {
   const api = Router();
+
+  const rateLimit = new RateLimiterMemory({
+    points: 120,
+    duration: 60,
+  });
+
+  api.use((req, res, next) => {
+    rateLimit
+      .consume(req.ip)
+      .then(rateLimiterRes => {
+        res.setHeader("X-RateLimit-Limit", rateLimit.points);
+        res.setHeader("X-RateLimit-Remaining", rateLimiterRes.remainingPoints);
+        res.setHeader("X-RateLimit-Reset", Math.ceil(rateLimiterRes.msBeforeNext / 1000));
+        next();
+      })
+      .catch(rateLimiterRes => {
+        rateLimit.block(req.ip, Math.min(rateLimiterRes.msBeforeNext / 1000 + 12, 600));
+        res.setHeader("X-RateLimit-Limit", rateLimit.points);
+        res.setHeader("X-RateLimit-Remaining", 0);
+        res.setHeader("X-RateLimit-Reset", Math.ceil(rateLimiterRes.msBeforeNext / 1000));
+        res.status(429);
+        res.json({
+          errors: ["Too many requests"],
+        });
+        return res.end();
+      });
+  });
 
   // Make sure we don't let any content load, this is an API.
   api.use(

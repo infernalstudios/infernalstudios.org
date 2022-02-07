@@ -11,6 +11,14 @@ info:
     The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
     "SHOULD", "SHOULD NOT", "RECOMMENDED",  "MAY", and "OPTIONAL" in this
     document are to be interpreted as described in [RFC 2119](https://datatracker.ietf.org/doc/html/rfc2119).
+
+    The following headers will always be present in responses:
+
+    | Header | Description |
+    | --- | --- |
+    | X-RateLimit-Limit | The numver of allowed requests in the current period |
+    | X-RateLimit-Remaining | The number of requests remaining in the current period |
+    | X-RateLimit-Reset | The timestamp in seconds since the epoch of the next period |
   contact:
     name: Infernal Studios
     email: contact@infernalstudios.org
@@ -24,6 +32,81 @@ servers:
       served at this URL.
 
 components:
+  headers:
+    X-RateLimit-Limit:
+      description: The number of allowed requests in the current period
+      schema:
+        type: integer
+    X-RateLimit-Remaining:
+      description: The number of remaining requests in the current period
+      schema:
+        type: integer
+    X-RateLimit-Reset:
+      description: The number of seconds left in the current period
+      schema:
+        type: integer
+
+  responses:
+    too_many_requests:
+      description: Too Many Requests
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [errors]
+            properties:
+              errors:
+                description: |
+                  The error message(s) that occurred.
+                type: array
+                items:
+                  type: string
+          examples:
+            too_many_requests:
+              $ref: "#/components/examples/too_many_requests"
+
+    internal_server_error:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error"
+          examples:
+            internal_server_error:
+              value: { "errors": ["An unexpected error occurred."] }
+
+    zod_error:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/zod_error"
+          examples:
+            zod_error:
+              value:
+                errors:
+                  - code: "invalid_type"
+                    expected: "array"
+                    received: "undefined"
+                    path: ["path", "to", "value"]
+                    message: "Required"
+
+    unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error"
+          examples:
+            invalid_auth:
+              description: The below provided array of strings are the error messages for invalid authorization.
+              value:
+                errors:
+                  - "A token is required for this endpoint"
+                  - "The authorization header must be of type 'Bearer'"
+                  - "The provided token is invalid"
+                  - "Insufficient permissions"
+
   securitySchemes:
     login:
       type: http
@@ -35,17 +118,93 @@ components:
     token:
       type: http
       scheme: bearer
-      bearerFormat: JWT
+      bearerFormat: Random 127 character long hex string
       description: |
-        A JSON Web Token (JWT) is a compact, self-contained, signed token that
-        represents an authenticated user. Read more: 
         The token is used to authenticate the user and to authorize the user's
-        actions.
-        The token is issued by the server and is used to identify the user.
-        The token is sent in the Authorization header.
+        actions.<br>
+        The token is issued by the server and is used to identify the user.<br>
+        The token is must be sent in the Authorization header of a request.<br>
+        The token is valid for a limited time (login tokens practically do not expire).<br>
+        The token in a string form is its id, which is a random 127-character-long hex string, which is what you see in the Authorization header.
 
-security:
-  - api_key: []
+  schemas:
+    token:
+      type: object
+      required: [id, user, expiry, permissions, reason]
+      properties:
+        id:
+          type: string
+          description: The token's unique ID.
+        user:
+          type: string
+          description: The token holder's ID.
+        expiry:
+          type: number
+          description: The token's expiry (unix) timestamp.
+        permissions:
+          type: array
+          description: The token's permissions.
+          items:
+            type: string
+        reason:
+          type: string
+          description: The reason why the token was issued.
+
+    partial_token:
+      type: object
+      required: [permissions]
+      properties:
+        expiry:
+          $ref: "#/components/schemas/token/properties/expiry"
+        reason:
+          $ref: "#/components/schemas/token/properties/reason"
+        permissions:
+          $ref: "#/components/schemas/token/properties/permissions"
+
+    error:
+      type: array
+      items:
+        type: string
+
+    zod_error:
+      description: |
+        The issue array returned by the Zod library.
+        This is used to provide a more detailed error message to the client.
+
+        Read more: https://github.com/colinhacks/zod#errors
+      type: array
+      items:
+        type: object
+
+  examples:
+    too_many_requests:
+      summary: Too Many Requests
+      description: |
+        The client has sent too many requests in a given amount of time.
+        The server is temporarily unable to service the request.
+      value: { "errors": ["Too many requests"] }
+
+    token:
+      summary: Token
+      value:
+        id: "a-random-string"
+        user: "username"
+        expiry: 1577880000
+        permissions:
+          - "self:modify"
+          - "user:modify"
+          - "user:view"
+          - "token:delete"
+          - "mod:create"
+          - "mod:modify"
+          - "mod:delete"
+          - "redirect:create"
+          - "redirect:modify"
+          - "redirect:delete"
+          - "admin"
+          - "superadmin"
+        reason: "A reason"
+
 paths:
   /status:
     get:
@@ -67,9 +226,146 @@ paths:
                     type: string
                     description: |
                       Only possible values are `"ok"` and `"maintainance"`.
-                      This may change in the future.
-
+                      This may change in the future.<br>
                       If this value is `"maintainance"`, the API is undergoing
                       maintainance and other endpoints should not be expected
                       to work.
                 example: { "status": "ok" }
+        "419":
+          $ref: "#/components/responses/too_many_requests"
+
+  /auth/login:
+    post:
+      summary: Login
+      description: |
+        Logs in the user and returns a token.
+        The token is practically unexpireable.
+      security:
+        - login: []
+
+      requestBody:
+        description: |
+          The request body must contain the username and password of the user.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username:
+                  type: string
+                  description: |
+                    The username of the user.
+                password:
+                  type: string
+                  description: |
+                    The password of the user.<br>
+                    The password must not be hashed by the client, the server does it automatically.<br>
+                    Because of this, the api call should be made through HTTPS.
+            examples:
+              login:
+                value: { "username": "admin", "password": "really_secure_PASSW0RD" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/token"
+              examples:
+                token:
+                  $ref: "#/components/examples/token"
+        "400":
+          $ref: "#/components/responses/zod_error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+              examples:
+                invalid_credentials:
+                  summary: Invalid credentials
+                  value: { "errors": ["Invalid username or password"] }
+        "419":
+          $ref: "#/components/responses/too_many_requests"
+        "500":
+          $ref: "#/components/responses/internal_server_error"
+
+  /auth/token:
+    post:
+      summary: Create Token
+      description: |
+        Creates a token for the user.
+
+        A token can only inherit its owner's permissions, it cannot have any additional permissions.
+      security:
+        - token: []
+
+      requestBody:
+        description: |
+          The request body must contain an object with a `"permissions"` array.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/partial_token"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/token"
+              examples:
+                token:
+                  $ref: "#/components/examples/token"
+        "400":
+          $ref: "#/components/responses/zod_error"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "419":
+          $ref: "#/components/responses/too_many_requests"
+        "500":
+          $ref: "#/components/responses/internal_server_error"
+
+  /auth/token/:id:
+    delete:
+      summary: Delete Token
+      description: |
+        Deletes a token.
+
+        A token can only be deleted if it is not expired. (it should be automatically deleted within a 60s margin)<br>
+        A token can delete itself, and another token can delete it if it has the `"token:delete"` permission.<br>
+        Only tokens belonging to the same user can delete each other.
+      security:
+        - token: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            description: The token's unique ID.
+      responses:
+        "204":
+          description: No Content
+        "400":
+          $ref: "#/components/responses/zod_error"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+              examples:
+                token_not_found:
+                  summary: Token not found
+                  value: { "errors": ["Token not found"] }
+        "419":
+          $ref: "#/components/responses/too_many_requests"
+        "500":
+          $ref: "#/components/responses/internal_server_error"

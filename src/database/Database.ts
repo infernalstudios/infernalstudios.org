@@ -117,8 +117,9 @@ export class Database {
       await this.sql.schema.createTable("tokens", table => {
         table.string("id", 127).index().primary().notNullable();
         table.string("user", 255).index().notNullable();
+        table.string("reason", 255).defaultTo("unspecified").notNullable();
         table.specificType("permissions", "varchar(255) array").notNullable();
-        table.integer("expiry").defaultTo(0x7fffffff);
+        table.integer("expiry").defaultTo(0x7fffffff).notNullable();
         table.foreign("user").references("users.id").onDelete("CASCADE");
       });
     }

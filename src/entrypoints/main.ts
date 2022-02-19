@@ -9,7 +9,7 @@ import { Database } from "../database/Database";
 import { fileVisible } from "../util/Util";
 
 export async function main() {
-  const logfile = path.join(__dirname, `../log/${new Date().toISOString()}.txt`);
+  const logfile = path.join(__dirname, `../../log/${new Date().toISOString()}.txt`);
   await fs.ensureFile(logfile);
 
   const mainLogger = new Logger({

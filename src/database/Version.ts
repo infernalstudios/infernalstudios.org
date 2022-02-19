@@ -10,7 +10,7 @@ export class Version {
   private loader: string;
   private mod: string;
   private dependencies: VersionDependency[];
-  #database: Database;
+  private database: Database;
 
   constructor(version: VersionSchema, database: Database) {
     this.id = version.id;
@@ -21,11 +21,11 @@ export class Version {
     this.loader = version.loader;
     this.mod = version.mod;
     this.dependencies = version.dependencies;
-    this.#database = database;
+    this.database = database;
   }
 
   public async delete(): Promise<number> {
-    return this.#database.sql
+    return this.database.sql
       .from("versions")
       .where({ id: this.id, minecraft: this.minecraft, loader: this.loader })
       .del();
@@ -33,37 +33,37 @@ export class Version {
 
   public async setId(id: string): Promise<void> {
     const newId = (
-      await this.#database.sql
+      await this.database.sql
         .select("*")
         .from("versions")
         .where({ id: this.id, minecraft: this.minecraft, loader: this.loader })
         .update({ id })
-        .returning("id")
-    )[0];
+        .returning("*")
+    )[0].id;
     this.id = newId;
   }
 
   public async setName(name: string): Promise<void> {
     const newName = (
-      await this.#database.sql
+      await this.database.sql
         .select("*")
         .from("versions")
         .where({ id: this.id, minecraft: this.minecraft, loader: this.loader })
         .update({ name })
-        .returning("name")
-    )[0];
+        .returning("*")
+    )[0].name;
     this.name = newName;
   }
 
   public async setUrl(url: string): Promise<void> {
     const newUrl = (
-      await this.#database.sql
+      await this.database.sql
         .select("*")
         .from("versions")
         .where({ id: this.id, minecraft: this.minecraft, loader: this.loader })
         .update({ url })
-        .returning("url")
-    )[0];
+        .returning("*")
+    )[0].url;
     this.url = newUrl;
   }
 
@@ -74,13 +74,13 @@ export class Version {
       dependencies = JSON.stringify(dependencies);
     }
     const newDependencies = (
-      await this.#database.sql
+      await this.database.sql
         .select("*")
         .from("versions")
         .where({ id: this.id, minecraft: this.minecraft, loader: this.loader })
         .update({ dependencies })
-        .returning("dependencies")
-    )[0];
+        .returning("*")
+    )[0].dependencies;
     this.dependencies = JSON.parse(newDependencies);
   }
 
@@ -113,9 +113,9 @@ export class Version {
   }
 
   public async getMod(): Promise<Mod> {
-    const mod = await this.#database.sql.select("*").from("mods").where({ id: this.mod });
+    const mod = await this.database.sql.select("*").from("mods").where({ id: this.mod });
 
-    return new Mod(mod[0], this.#database);
+    return new Mod(mod[0], this.database);
   }
 
   public toJSON(): VersionSchema {

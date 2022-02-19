@@ -7,7 +7,7 @@ export class Token {
   private expiry: number;
   private permissions: string[];
   private reason: string;
-  #database: Database;
+  private database: Database;
 
   public constructor(token: TokenSchema, database: Database) {
     this.id = token.id;
@@ -15,7 +15,7 @@ export class Token {
     this.expiry = token.expiry;
     this.permissions = token.permissions;
     this.reason = token.reason;
-    this.#database = database;
+    this.database = database;
   }
 
   public getId(): string {
@@ -23,7 +23,7 @@ export class Token {
   }
 
   public async getUser(): Promise<User> {
-    const user = await this.#database.users.get(this.user);
+    const user = await this.database.users.get(this.user);
     if (!user) {
       throw new Error("User not found in database, this should never happen");
     }
@@ -40,8 +40,8 @@ export class Token {
 
   public async setExpiry(expireTime: number): Promise<number> {
     const expiry = (
-      await this.#database.sql.from("tokens").where({ id: this.id }).update({ expiry: expireTime }).returning("expiry")
-    )[0];
+      await this.database.sql.from("tokens").where({ id: this.id }).update({ expiry: expireTime }).returning("*")
+    )[0].expiry;
     this.expiry = expiry;
     return this.expiry;
   }
@@ -59,12 +59,12 @@ export class Token {
 
   public async setPermissions(): Promise<void> {
     const permissions = (
-      await this.#database.sql
+      await this.database.sql
         .from("tokens")
         .where({ id: this.id })
         .update({ permissions: this.permissions })
-        .returning("permissions")
-    )[0];
+        .returning("*")
+    )[0].permissions;
     this.permissions = permissions;
   }
 
@@ -74,16 +74,16 @@ export class Token {
 
   public async setReason(reason: string): Promise<void> {
     const newReason = (
-      await this.#database.sql.from("tokens").where({ id: this.id }).update({ reason: reason }).returning("reason")
-    )[0];
+      await this.database.sql.from("tokens").where({ id: this.id }).update({ reason: reason }).returning("*")
+    )[0].reason;
     this.reason = newReason;
   }
 
   public async delete(): Promise<number> {
-    return await this.#database.tokens.delete(this.id);
+    return await this.database.tokens.delete(this.id);
   }
 
-  public toJson(): TokenSchema {
+  public toJSON(): TokenSchema {
     return {
       id: this.id,
       user: this.user,

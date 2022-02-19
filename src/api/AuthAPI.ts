@@ -32,7 +32,7 @@ export function getAuthAPI(database: Database): Router {
       `Login at ${new Date().toISOString()} from ${req.ip}`
     );
 
-    res.json(token.toJson());
+    res.json(token.toJSON());
   });
 
   const postTokenSchema = z
@@ -60,7 +60,7 @@ export function getAuthAPI(database: Database): Router {
     );
 
     res.status(201);
-    res.json(token.toJson());
+    res.json(token.toJSON());
   });
 
   api.delete("/token/:id", getAuthMiddleware(database));

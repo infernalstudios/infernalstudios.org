@@ -5,35 +5,34 @@ export class Mod {
   private id: string;
   private name: string;
   private url: string;
-  #database: Database;
+  private database: Database;
 
   constructor(mod: ModSchema, database: Database) {
     this.id = mod.id;
     this.name = mod.name;
     this.url = mod.url;
-    this.#database = database;
+    this.database = database;
   }
 
   public async delete(): Promise<number> {
-    return this.#database.sql.from("mods").where({ id: this.id }).del();
+    return this.database.sql.from("mods").where({ id: this.id }).del();
   }
 
   public async setId(id: string): Promise<void> {
-    const newId = (await this.#database.sql.select("*").from("mods").where({ id }).update({ id }).returning("id"))[0];
+    const newId = (await this.database.sql.select("*").from("mods").where({ id }).update({ id }).returning("*"))[0].id;
     this.id = newId;
   }
 
   public async setName(name: string): Promise<void> {
     const newName = (
-      await this.#database.sql.select("*").from("mods").where({ name }).update({ name }).returning("name")
-    )[0];
+      await this.database.sql.select("*").from("mods").where({ name }).update({ name }).returning("*")
+    )[0].name;
     this.name = newName;
   }
 
   public async setUrl(url: string): Promise<void> {
-    const newUrl = (
-      await this.#database.sql.select("*").from("mods").where({ url }).update({ url }).returning("url")
-    )[0];
+    const newUrl = (await this.database.sql.select("*").from("mods").where({ url }).update({ url }).returning("*"))[0]
+      .url;
     this.url = newUrl;
   }
 
@@ -50,22 +49,22 @@ export class Mod {
   }
 
   public async getVersions(): Promise<Version[]> {
-    return (await this.#database.sql.select("*").from("versions").where({ mod: this.id })).map(
-      version => new Version(version as unknown as VersionSchema, this.#database)
+    return (await this.database.sql.select("*").from("versions").where({ mod: this.id })).map(
+      version => new Version(version as unknown as VersionSchema, this.database)
     );
   }
 
   public async deleteVersion(version: string | Version): Promise<number> {
     version = typeof version === "string" ? version : version.getId();
-    return await this.#database.sql.from("versions").where({ mod: this.id, id: version }).del();
+    return await this.database.sql.from("versions").where({ mod: this.id, id: version }).del();
   }
 
   public async addVersion(version: Omit<VersionSchema, "mod">): Promise<Version> {
-    const newVersion = await this.#database.sql
+    const newVersion = await this.database.sql
       .insert({ ...version, mod: this.id, dependencies: JSON.stringify(version.dependencies) })
       .into("versions")
       .returning("*");
-    return new Version(newVersion[0] as unknown as VersionSchema, this.#database);
+    return new Version(newVersion[0] as unknown as VersionSchema, this.database);
   }
 
   public toJSON(): ModSchema {

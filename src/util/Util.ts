@@ -15,7 +15,7 @@ declare global {
   namespace Express {
     interface Request {
       token?: Token;
-      user?: User;
+      user?: Promise<User>;
     }
   }
 }
@@ -64,8 +64,8 @@ export function getAuthMiddleware(
       return res.end();
     }
 
-    const user = await token.getUser();
-    req.user = user;
+    // Let routes await the user if they actually need it, otherwise don't await and prolong the request ourselves.
+    req.user = token.getUser();
 
     return next();
   };

@@ -47,7 +47,7 @@ export function getAuthAPI(database: Database): Router {
   api.post("/token", getAuthMiddleware(database));
   api.post("/token", async (req, res) => {
     const { expiry, reason, permissions } = postTokenSchema.parse(req.body);
-    const user = req.user;
+    const user = await req.user;
     if (!user) {
       throw new Error("User not defined, this should never happen");
     }

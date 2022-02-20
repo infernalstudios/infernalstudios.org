@@ -3,6 +3,7 @@ import helmet from "helmet";
 import { RateLimiterMemory } from "rate-limiter-flexible";
 import { Database } from "../database/Database";
 import { getAuthAPI } from "./AuthAPI";
+import { getRedirectAPI } from "./RedirectAPI";
 import { StatusAPI } from "./StatusAPI";
 
 // TODO: rembet to remove this
@@ -59,6 +60,7 @@ export function getAPI(database: Database): Router {
 
   api.use("/status", StatusAPI);
   api.use("/auth", getAuthAPI(database));
+  api.use("/redirect", getRedirectAPI(database));
 
   return api;
 }

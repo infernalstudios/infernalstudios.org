@@ -33,6 +33,7 @@ export function getAuthAPI(database: Database): Router {
     );
 
     res.json(token.toJSON());
+    return res.end();
   });
 
   const postTokenSchema = z

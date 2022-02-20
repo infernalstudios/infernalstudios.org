@@ -77,12 +77,6 @@ void async function main() {
   console.log("Parsing file");
   const document = parse5.parse(documentContent);
 
-  console.log("Injecting custom code");
-  const script = parse5.parse(`<script> </script>`).childNodes[0].childNodes[0].childNodes[0];
-  script.childNodes[0].value = (await fs.readFile(path.join(__dirname, "postdocs/injected.js"))).toString();
-  document.childNodes[1].childNodes[0].childNodes.unshift(script);
-  script.parentNode = document.childNodes[1].childNodes[0];
-
   let k = 0;
   /** @type {{ [name: string]: string; }} */
   const extracted = {};
@@ -164,8 +158,6 @@ void async function main() {
 
   console.log("Modifying document");
   recurse(document);
-
-  document.childNodes.push(script);
 
   async function writeDocument() {
     console.log("Serializing document");

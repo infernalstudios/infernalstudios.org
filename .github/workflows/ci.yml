@@ -128,7 +128,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    if: success() && github.event_name == 'push' && github.ref == 'refs/heads/stable'
+    if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: [ build, format, lint ]
     steps:
       - name: Use NodeJS v16

@@ -76,7 +76,7 @@ export function getRedirectAPI(database: Database): Router {
     if (typeof redirect === "undefined") {
       res.status(404);
       res.json({
-        errors: ["A redirect with this id cannot be found!"],
+        errors: ["Redirect not found"],
       });
       return res.end();
     }
@@ -86,7 +86,7 @@ export function getRedirectAPI(database: Database): Router {
       if (typeof checkAgainst !== "undefined" && redirect.getId() !== checkAgainst.getId()) {
         res.status(400);
         res.json({
-          errors: ["A redirect with this path already exists!"],
+          errors: ["Path not unique"],
         });
         return res.end();
       }
@@ -116,7 +116,7 @@ export function getRedirectAPI(database: Database): Router {
     if (!redirect) {
       res.status(404);
       res.json({
-        errors: ["Token not found"],
+        errors: ["Redirect not found"],
       });
       return res.end();
     }

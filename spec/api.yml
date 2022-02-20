@@ -161,6 +161,33 @@ components:
         permissions:
           $ref: "#/components/schemas/token/properties/permissions"
 
+    redirect:
+      type: object
+      required: [id, name, url, path]
+      properties:
+        id:
+          type: string
+          description: The redirect's unique ID.
+        url:
+          type: string
+          description: The URL to redirect to.
+        name:
+          type: string
+          description: The name of the redirect.
+        path:
+          type: string
+          description: The path that the redirect is located on, must be unique.
+
+    partial_redirect:
+      type: object
+      properties:
+        url:
+          $ref: "#/components/schemas/redirect/properties/url"
+        name:
+          $ref: "#/components/schemas/redirect/properties/name"
+        path:
+          $ref: "#/components/schemas/redirect/properties/path"
+
     error:
       type: array
       items:
@@ -205,6 +232,25 @@ components:
           - "superadmin"
         reason: "A reason"
 
+    redirects:
+      summary: Redirects
+      value:
+        - id: "a-random-unique-string"
+          name: "Example"
+          url: "https://example.com"
+          path: "/"
+        - id: "another-random-string"
+          name: "Another Example"
+          url: "https://example.com/another/link"
+          path: "/another/path"
+
+    redirect:
+      summary: Redirect
+      value:
+        id: "a-random-unique-string"
+        name: "Example"
+        url: "https://example.com"
+        path: "/"
 paths:
   /status:
     get:
@@ -365,6 +411,143 @@ paths:
                 token_not_found:
                   summary: Token not found
                   value: { "errors": ["Token not found"] }
+        "419":
+          $ref: "#/components/responses/too_many_requests"
+        "500":
+          $ref: "#/components/responses/internal_server_error"
+
+  /redirect:
+    get:
+      summary: Get all redirects
+      description: |
+        Returns all redirects.
+      security:
+        - token: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/redirect"
+              examples:
+                redirects:
+                  $ref: "#/components/examples/redirects"
+        "419":
+          $ref: "#/components/responses/too_many_requests"
+        "500":
+          $ref: "#/components/responses/internal_server_error"
+    post:
+      summary: Create a redirect
+      description: |
+        Creates a redirect.
+      security:
+        - token: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/redirect"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/redirect"
+              examples:
+                redirect:
+                  $ref: "#/components/examples/redirect"
+        "400":
+          $ref: "#/components/responses/zod_error"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "419":
+          $ref: "#/components/responses/too_many_requests"
+        "500":
+          $ref: "#/components/responses/internal_server_error"
+
+  /redirect/:id:
+    put:
+      summary: Update a redirect
+      description: |
+        Updates a redirect.
+      security:
+        - token: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            description: The redirect's unique ID.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/partial_redirect"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/redirect"
+              examples:
+                redirect:
+                  $ref: "#/components/examples/redirect"
+        "400":
+          $ref: "#/components/responses/zod_error"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+              examples:
+                redirect_not_found:
+                  summary: Redirect not found
+                  value: { "errors": ["Redirect not found"] }
+        "419":
+          $ref: "#/components/responses/too_many_requests"
+        "500":
+          $ref: "#/components/responses/internal_server_error"
+    delete:
+      summary: Delete a redirect
+      description: |
+        Deletes a redirect.
+      security:
+        - token: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            description: The redirect's unique ID.
+      responses:
+        "204":
+          description: No Content
+        "400":
+          $ref: "#/components/responses/zod_error"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+              examples:
+                redirect_not_found:
+                  summary: Redirect not found
+                  value: { "errors": ["Redirect not found"] }
         "419":
           $ref: "#/components/responses/too_many_requests"
         "500":

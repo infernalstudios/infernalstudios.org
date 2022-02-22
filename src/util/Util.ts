@@ -43,7 +43,10 @@ export function getAuthMiddleware(
 
     const token = await database.tokens.get(req.headers.authorization.slice(7) /* Removes the "bearer " prefix */);
 
-    if (!token) {
+    if (!token || token.isExpired()) {
+      if (token?.isExpired()) {
+        token.delete();
+      }
       res.status(401);
       res.json({
         errors: ["The provided token is invalid"],

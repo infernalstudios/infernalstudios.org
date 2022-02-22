@@ -19,20 +19,23 @@ export class Mod {
   }
 
   public async setId(id: string): Promise<void> {
-    const newId = (await this.database.sql.select("*").from("mods").where({ id }).update({ id }).returning("*"))[0].id;
+    const newId = (
+      await this.database.sql.select("*").from("mods").where({ id: this.id }).update({ id }).returning("*")
+    )[0].id;
     this.id = newId;
   }
 
   public async setName(name: string): Promise<void> {
     const newName = (
-      await this.database.sql.select("*").from("mods").where({ name }).update({ name }).returning("*")
+      await this.database.sql.select("*").from("mods").where({ id: this.id }).update({ name }).returning("*")
     )[0].name;
     this.name = newName;
   }
 
   public async setUrl(url: string): Promise<void> {
-    const newUrl = (await this.database.sql.select("*").from("mods").where({ url }).update({ url }).returning("*"))[0]
-      .url;
+    const newUrl = (
+      await this.database.sql.select("*").from("mods").where({ id: this.id }).update({ url }).returning("*")
+    )[0].url;
     this.url = newUrl;
   }
 
@@ -54,9 +57,11 @@ export class Mod {
     );
   }
 
-  public async deleteVersion(version: string | Version): Promise<number> {
-    version = typeof version === "string" ? version : version.getId();
-    return await this.database.sql.from("versions").where({ mod: this.id, id: version }).del();
+  public async deleteVersion(version: Version): Promise<number> {
+    return await this.database.sql
+      .from("versions")
+      .where({ mod: this.id, id: version.getId(), loader: version.getLoader(), minecraft: version.getMinecraft() })
+      .del();
   }
 
   public async addVersion(version: Omit<VersionSchema, "mod">): Promise<Version> {

@@ -27,21 +27,21 @@ export class Redirect {
 
   public async setName(name: string): Promise<void> {
     const newName = (
-      await this.database.sql.select("*").from("redirects").where({ name }).update({ name }).returning("*")
+      await this.database.sql.select("*").from("redirects").where({ id: this.id }).update({ name }).returning("*")
     )[0].name;
     this.name = newName;
   }
 
   public async setUrl(url: string): Promise<void> {
     const newUrl = (
-      await this.database.sql.select("*").from("redirects").where({ url }).update({ url }).returning("*")
+      await this.database.sql.select("*").from("redirects").where({ id: this.id }).update({ url }).returning("*")
     )[0].url;
     this.url = newUrl;
   }
 
   public async setPath(path: string): Promise<void> {
     const newPath = (
-      await this.database.sql.select("*").from("redirects").where({ path }).update({ path }).returning("*")
+      await this.database.sql.select("*").from("redirects").where({ id: this.id }).update({ path }).returning("*")
     )[0].path;
     this.path = newPath;
   }

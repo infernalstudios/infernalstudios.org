@@ -52,6 +52,9 @@ export class Database {
     });
 
     await this.setup();
+    if ((await this.users.getAll()).length === 0) {
+      this.logger.warn("No users found in database");
+    }
     this.intervals.push(
       setInterval(() => this.tokens.clearExpired(), 1000 * 60) // Clear expired tokens every minute
     );

@@ -1,0 +1,186 @@
+token:
+  type: object
+  required: [id, user, expiry, permissions, reason]
+  properties:
+    id:
+      type: string
+      description: The token's unique ID.
+    user:
+      type: string
+      description: The token holder's ID.
+    expiry:
+      type: number
+      description: The token's expiry (unix) timestamp.
+    permissions:
+      type: array
+      description: The token's permissions.
+      items:
+        type: string
+    reason:
+      type: string
+      description: The reason why the token was issued.
+
+partial_token:
+  type: object
+  required: [permissions]
+  properties:
+    expiry:
+      $ref: "#/token/properties/expiry"
+    reason:
+      $ref: "#/token/properties/reason"
+    permissions:
+      $ref: "#/token/properties/permissions"
+
+redirect:
+  type: object
+  required: [id, name, url, path]
+  properties:
+    id:
+      type: string
+      description: The redirect's unique ID.
+    url:
+      type: string
+      description: The URL to redirect to.
+    name:
+      type: string
+      description: The name of the redirect.
+    path:
+      type: string
+      description: The path that the redirect is located on, must be unique.
+
+partial_redirect:
+  type: object
+  properties:
+    url:
+      $ref: "#/redirect/properties/url"
+    name:
+      $ref: "#/redirect/properties/name"
+    path:
+      $ref: "#/redirect/properties/path"
+
+mod:
+  type: object
+  required: [id, name, url]
+  properties:
+    id:
+      type: string
+      description: The mod's unique ID.
+    name:
+      type: string
+      description: The mod's name.
+    url:
+      type: string
+      description: The URL to the mod's homepage.
+
+partial_mod:
+  type: object
+  properties:
+    name:
+      $ref: "#/mod/properties/name"
+    url:
+      $ref: "#/mod/properties/url"
+
+version:
+  type: object
+  required: [id, mod, version, url, date, changelog]
+  properties:
+    id:
+      type: string
+      description: |
+        The version's unique ID.<br>
+        Must conform to the [semantic versioning specification](https://semver.org/spec/v2.0.0.html).
+    name:
+      type: string
+      description: The version's name.
+    url:
+      type: string
+      description: The URL to the version's homepage.
+    minecraft:
+      type: string
+      description: The Minecraft version this version is for.
+    recommended:
+      type: boolean
+      description: Whether or not this version is recommended.
+    changelog:
+      type: string
+      description: The version's changelog.
+    loader:
+      type: string
+      description: The loader that this version is compatible with.
+      enum:
+        - forge
+        - fabric
+        - rift
+        - liteloader
+        - quilt
+    dependencies:
+      type: array
+      description: The version's dependencies.
+      items:
+        $ref: "#/dependency"
+
+dependency:
+  type: object
+  required: [id, url, required, side, version]
+  properties:
+    id:
+      type: string
+      description: The modid of the dependency.
+    url:
+      type: string
+      description: The URL to the download page of the dependency.
+    required:
+      type: boolean
+      description: Whether or not this dependency is required.
+    side:
+      type: string
+      description: The side this dependency is for.
+      enum:
+        - CLIENT
+        - SERVER
+        - BOTH
+    version:
+      type: string
+      description: |
+        The version or version range of the dependency.
+        See [NPM's semver](https://nodejs.dev/learn/semantic-versioning-using-npm) for more information.
+
+forge_update_json:
+  type: object
+  required: [homepage, promo]
+  properties:
+    homepage:
+      type: string
+      description: The URL to the mod's homepage.
+    promo:
+      type: object
+      description: The mod's latest versions.
+      properties:
+        <mcversion>-latest:
+          type: string
+          description: The latest version of the mod for the specified Minecraft version.
+        <mcversion>-recommended:
+          type: string
+          description: The recommended version of the mod for the specified Minecraft version.
+    <mcversion>:
+      type: object
+      description: The mod's versions for the specified Minecraft version.
+      properties:
+        <version>:
+          type: string
+          description: The changelog for the version.
+
+error:
+  type: array
+  items:
+    type: string
+
+zod_error:
+  description: |
+    The issue array returned by the Zod library.
+    This is used to provide a more detailed error message to the client.
+
+    Read more: https://github.com/colinhacks/zod#errors
+  type: array
+  items:
+    type: object

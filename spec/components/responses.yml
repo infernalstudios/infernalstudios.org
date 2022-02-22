@@ -1,0 +1,59 @@
+too_many_requests:
+  description: Too Many Requests
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [errors]
+        properties:
+          errors:
+            description: |
+              The error message(s) that occurred.
+            type: array
+            items:
+              type: string
+      examples:
+        too_many_requests:
+          $ref: "#./examples/too_many_requests"
+
+internal_server_error:
+  description: Internal Server Error
+  content:
+    application/json:
+      schema:
+        $ref: "#./schemas/error"
+      examples:
+        internal_server_error:
+          value: { "errors": ["An unexpected error occurred."] }
+
+zod_error:
+  description: Bad Request
+  content:
+    application/json:
+      schema:
+        $ref: "#./schemas/zod_error"
+      examples:
+        zod_error:
+          value:
+            errors:
+              - code: "invalid_type"
+                expected: "array"
+                received: "undefined"
+                path: ["path", "to", "value"]
+                message: "Required"
+
+unauthorized:
+  description: Unauthorized
+  content:
+    application/json:
+      schema:
+        $ref: "#./schemas/error"
+      examples:
+        invalid_auth:
+          description: The below provided array of strings are the error messages for invalid authorization.
+          value:
+            errors:
+              - "A token is required for this endpoint"
+              - "The authorization header must be of type 'Bearer'"
+              - "The provided token is invalid"
+              - "Insufficient permissions"

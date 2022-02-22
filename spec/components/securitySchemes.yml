@@ -1,0 +1,19 @@
+login:
+  type: http
+  scheme: Basic
+  description: |
+    Basic authentication.
+    This is used for generating a temporary API key for the client.
+
+token:
+  type: http
+  scheme: bearer
+  bearerFormat: Random 127 character long hex string
+  description: |
+    The token is:
+      - used to authenticate the user and to authorize the user's
+    actions.
+      - issued by the server and is used to identify the user.
+      - must be sent in the Authorization header of a request.
+      - valid for a limited time (login tokens practically do not expire).
+      - in a string form its id, which is a random 127-character-long hex string, which is what you see in the Authorization header.

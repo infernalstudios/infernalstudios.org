@@ -1,0 +1,110 @@
+too_many_requests:
+  summary: Too Many Requests
+  description: |
+    The client has sent too many requests in a given amount of time.
+    The server is temporarily unable to service the request.
+  value: { "errors": ["Too many requests"] }
+
+token:
+  summary: Token
+  value:
+    id: "a-random-string"
+    user: "username"
+    expiry: 1577880000
+    permissions:
+      - "self:modify"
+      - "user:modify"
+      - "user:view"
+      - "token:delete"
+      - "mod:create"
+      - "mod:modify"
+      - "mod:delete"
+      - "redirect:create"
+      - "redirect:modify"
+      - "redirect:delete"
+      - "admin"
+      - "superadmin"
+    reason: "A reason"
+
+redirects:
+  summary: Redirects
+  value:
+    - id: "a-random-unique-string"
+      name: "Example"
+      url: "https://example.com"
+      path: "/"
+    - id: "another-random-string"
+      name: "Another Example"
+      url: "https://example.com/another/link"
+      path: "/another/path"
+
+redirect:
+  summary: Redirect
+  value:
+    id: "a-random-unique-string"
+    name: "Example"
+    url: "https://example.com"
+    path: "/"
+
+mod:
+  summary: Mod
+  value:
+    id: "acoolmod"
+    name: "A cool mod name"
+    url: "https://example.com/link/to/mod"
+
+versions:
+  summary: Versions
+  value:
+    - id: "1.0.0"
+      name: "1.0.0"
+      url: "https://example.com/1.0.0"
+      minecraft: "1.18.1"
+      recommended: true
+      changelog: "A changelog"
+      loader: "forge"
+      dependencies:
+        - id: "acoolmod"
+          url: "https://example.com/link/to/mod"
+          required: true
+          side: "CLIENT"
+          version: "1.0.0"
+    - id: "1.0.1"
+      name: "1.0.1"
+      url: "https://example.com/1.0.1"
+      minecraft: "1.18.1"
+      recommended: false
+      changelog: "A changelog"
+      loader: "liteloader"
+      dependencies:
+        - id: "acoolmod"
+          url: "https://example.com/link/to/mod"
+          required: true
+          side: "CLIENT"
+          version: "1.0.0"
+version:
+  summary: Version
+  value:
+    id: "1.0.0"
+    name: "1.0.0"
+    url: "https://example.com/1.0.0"
+    minecraft: "1.18.1"
+    recommended: true
+    changelog: "A changelog"
+    loader: "forge"
+    dependencies:
+      - id: "acoolmod"
+        url: "https://example.com/link/to/mod"
+        required: true
+        side: "CLIENT"
+        version: "1.0.0"
+
+forge_update_json:
+  summary: Forge Update JSON
+  value:
+    homepage: "https://example.com/link/to/mod"
+    promos:
+      1.18.1-latest: "1.0.0"
+      1.18.1-recommended: "1.0.0"
+    "1.18.1":
+      "1.0.0": Added epic new stuff!

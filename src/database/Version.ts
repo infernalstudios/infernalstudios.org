@@ -6,6 +6,7 @@ export class Version {
   private name: string;
   private url: string;
   private minecraft: string;
+  private recommended: boolean;
   private changelog: string;
   private loader: string;
   private mod: string;
@@ -17,6 +18,7 @@ export class Version {
     this.name = version.name;
     this.url = version.url;
     this.minecraft = version.minecraft;
+    this.recommended = version.recommended;
     this.changelog = version.changelog;
     this.loader = version.loader;
     this.mod = version.mod;
@@ -124,6 +126,7 @@ export class Version {
       name: this.name,
       url: this.url,
       minecraft: this.minecraft,
+      recommended: this.recommended,
       changelog: this.changelog,
       loader: this.loader,
       mod: this.mod,
@@ -141,6 +144,7 @@ export interface VersionSchema {
   name: string;
   url: string;
   minecraft: string;
+  recommended: boolean;
   changelog: string;
   loader: string;
   mod: string;

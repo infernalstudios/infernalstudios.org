@@ -6,6 +6,7 @@ import { Knex } from "knex";
 import { coloredIdentifier, Logger, LoggerLevel } from "logerian";
 import path from "path";
 import { formatWithOptions } from "util";
+import { Primitive, z, ZodLiteral, ZodUnion } from "zod";
 import { Database } from "../database/Database";
 import { Token } from "../database/Token";
 import { User } from "../database/User";
@@ -215,4 +216,10 @@ export async function fileVisible(filename: string): Promise<boolean> {
     () => true,
     () => false
   );
+}
+
+export function zodLiterals<T extends Primitive>(
+  ...args: T[]
+): ZodUnion<[ZodLiteral<T>, ZodLiteral<T>, ...ZodLiteral<T>[]]> {
+  return z.union(args.map(arg => z.literal(arg)) as [ZodLiteral<T>, ZodLiteral<T>, ...ZodLiteral<T>[]]);
 }

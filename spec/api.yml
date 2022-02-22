@@ -12,6 +12,11 @@ info:
     "SHOULD", "SHOULD NOT", "RECOMMENDED",  "MAY", and "OPTIONAL" in this
     document are to be interpreted as described in [RFC 2119](https://datatracker.ietf.org/doc/html/rfc2119).
 
+    When the [token](#section/Authentication/token) security scheme is defined
+    for a request in this doc, it means that the request must be authenticated
+    with a valid token with the permission listed beside it. (Exception: the
+    [POST `/auth/token`](#/paths/~1auth~1token/post) endpoint does not require any permissions)
+
     The following headers will always be present in responses:
 
     | Header | Description |
@@ -120,12 +125,13 @@ components:
       scheme: bearer
       bearerFormat: Random 127 character long hex string
       description: |
-        The token is used to authenticate the user and to authorize the user's
-        actions.<br>
-        The token is issued by the server and is used to identify the user.<br>
-        The token is must be sent in the Authorization header of a request.<br>
-        The token is valid for a limited time (login tokens practically do not expire).<br>
-        The token in a string form is its id, which is a random 127-character-long hex string, which is what you see in the Authorization header.
+        The token is:
+          - used to authenticate the user and to authorize the user's
+        actions.
+          - issued by the server and is used to identify the user.
+          - must be sent in the Authorization header of a request.
+          - valid for a limited time (login tokens practically do not expire).
+          - in a string form its id, which is a random 127-character-long hex string, which is what you see in the Authorization header.
 
   schemas:
     token:
@@ -187,6 +193,118 @@ components:
           $ref: "#/components/schemas/redirect/properties/name"
         path:
           $ref: "#/components/schemas/redirect/properties/path"
+
+    mod:
+      type: object
+      required: [id, name, url]
+      properties:
+        id:
+          type: string
+          description: The mod's unique ID.
+        name:
+          type: string
+          description: The mod's name.
+        url:
+          type: string
+          description: The URL to the mod's homepage.
+
+    partial_mod:
+      type: object
+      properties:
+        name:
+          $ref: "#/components/schemas/mod/properties/name"
+        url:
+          $ref: "#/components/schemas/mod/properties/url"
+
+    version:
+      type: object
+      required: [id, mod, version, url, date, changelog]
+      properties:
+        id:
+          type: string
+          description: |
+            The version's unique ID.<br>
+            Must conform to the [semantic versioning specification](https://semver.org/spec/v2.0.0.html).
+        name:
+          type: string
+          description: The version's name.
+        url:
+          type: string
+          description: The URL to the version's homepage.
+        minecraft:
+          type: string
+          description: The Minecraft version this version is for.
+        recommended:
+          type: boolean
+          description: Whether or not this version is recommended.
+        changelog:
+          type: string
+          description: The version's changelog.
+        loader:
+          type: string
+          description: The loader that this version is compatible with.
+          enum:
+            - forge
+            - fabric
+            - rift
+            - liteloader
+            - quilt
+        dependencies:
+          type: array
+          description: The version's dependencies.
+          items:
+            $ref: "#/components/schemas/dependency"
+
+    dependency:
+      type: object
+      required: [id, url, required, side, version]
+      properties:
+        id:
+          type: string
+          description: The modid of the dependency.
+        url:
+          type: string
+          description: The URL to the download page of the dependency.
+        required:
+          type: boolean
+          description: Whether or not this dependency is required.
+        side:
+          type: string
+          description: The side this dependency is for.
+          enum:
+            - CLIENT
+            - SERVER
+            - BOTH
+        version:
+          type: string
+          description: |
+            The version or version range of the dependency.
+            See [NPM's semver](https://nodejs.dev/learn/semantic-versioning-using-npm) for more information.
+
+    forge_update_json:
+      type: object
+      required: [homepage, promo]
+      properties:
+        homepage:
+          type: string
+          description: The URL to the mod's homepage.
+        promo:
+          type: object
+          description: The mod's latest versions.
+          properties:
+            <mcversion>-latest:
+              type: string
+              description: The latest version of the mod for the specified Minecraft version.
+            <mcversion>-recommended:
+              type: string
+              description: The recommended version of the mod for the specified Minecraft version.
+        <mcversion>:
+          type: object
+          description: The mod's versions for the specified Minecraft version.
+          properties:
+            <version>:
+              type: string
+              description: The changelog for the version.
 
     error:
       type: array
@@ -251,6 +369,70 @@ components:
         name: "Example"
         url: "https://example.com"
         path: "/"
+
+    mod:
+      summary: Mod
+      value:
+        id: "acoolmod"
+        name: "A cool mod name"
+        url: "https://example.com/link/to/mod"
+
+    versions:
+      summary: Versions
+      value:
+        - id: "1.0.0"
+          name: "1.0.0"
+          url: "https://example.com/1.0.0"
+          minecraft: "1.18.1"
+          recommended: true
+          changelog: "A changelog"
+          loader: "forge"
+          dependencies:
+            - id: "acoolmod"
+              url: "https://example.com/link/to/mod"
+              required: true
+              side: "CLIENT"
+              version: "1.0.0"
+        - id: "1.0.1"
+          name: "1.0.1"
+          url: "https://example.com/1.0.1"
+          minecraft: "1.18.1"
+          recommended: false
+          changelog: "A changelog"
+          loader: "liteloader"
+          dependencies:
+            - id: "acoolmod"
+              url: "https://example.com/link/to/mod"
+              required: true
+              side: "CLIENT"
+              version: "1.0.0"
+    version:
+      summary: Version
+      value:
+        id: "1.0.0"
+        name: "1.0.0"
+        url: "https://example.com/1.0.0"
+        minecraft: "1.18.1"
+        recommended: true
+        changelog: "A changelog"
+        loader: "forge"
+        dependencies:
+          - id: "acoolmod"
+            url: "https://example.com/link/to/mod"
+            required: true
+            side: "CLIENT"
+            version: "1.0.0"
+
+    forge_update_json:
+      summary: Forge Update JSON
+      value:
+        homepage: "https://example.com/link/to/mod"
+        promos:
+          1.18.1-latest: "1.0.0"
+          1.18.1-recommended: "1.0.0"
+        "1.18.1":
+          "1.0.0": Added epic new stuff!
+
 paths:
   /status:
     get:
@@ -343,8 +525,7 @@ paths:
     post:
       summary: Create Token
       description: |
-        Creates a token for the user.
-
+        Creates a token for the user.<br>
         A token can only inherit its owner's permissions, it cannot have any additional permissions.
       security:
         - token: []
@@ -382,11 +563,13 @@ paths:
       description: |
         Deletes a token.
 
-        A token can only be deleted if it is not expired. (it should be automatically deleted within a 60s margin)<br>
+        A token can only be deleted if it is not expired.<br>
+        Expired tokens are automatically deleted every minute, there's no need to do it yourself.<br>
+        If an expired token hasn't been deleted yet, it will be deleted when it's used.<br>
         A token can delete itself, and another token can delete it if it has the `"token:delete"` permission.<br>
         Only tokens belonging to the same user can delete each other.
       security:
-        - token: []
+        - token: ["token:delete"]
       parameters:
         - name: id
           in: path
@@ -416,13 +599,13 @@ paths:
         "500":
           $ref: "#/components/responses/internal_server_error"
 
-  /redirect:
+  /redirects:
     get:
-      summary: Get all redirects
+      summary: Get Redirects
       description: |
         Returns all redirects.
-      security:
-        - token: []
+
+        The redirects aren't sorted, they're returned in the order they were returned by the database.
       responses:
         "200":
           description: OK
@@ -440,11 +623,18 @@ paths:
         "500":
           $ref: "#/components/responses/internal_server_error"
     post:
-      summary: Create a redirect
+      summary: Create Redirect
       description: |
         Creates a redirect.
+
+        The `path` field must be unique, as there's no way there can be two redirects at the same place.<br>
+        The redirect logic discards leading and trailing slashes, so these are all the same:
+          - `/example_path/`
+          - `/example_path`
+          - `example_path`
+          - `example_path/`
       security:
-        - token: []
+        - token: ["redirect:create"]
       requestBody:
         required: true
         content:
@@ -470,13 +660,11 @@ paths:
         "500":
           $ref: "#/components/responses/internal_server_error"
 
-  /redirect/:id:
+  /redirects/:id:
     put:
-      summary: Update a redirect
-      description: |
-        Updates a redirect.
+      summary: Update Redirect
       security:
-        - token: []
+        - token: ["redirect:modify"]
       parameters:
         - name: id
           in: path
@@ -519,11 +707,9 @@ paths:
         "500":
           $ref: "#/components/responses/internal_server_error"
     delete:
-      summary: Delete a redirect
-      description: |
-        Deletes a redirect.
+      summary: Delete Redirect
       security:
-        - token: []
+        - token: ["redirect:delete"]
       parameters:
         - name: id
           in: path
@@ -548,6 +734,354 @@ paths:
                 redirect_not_found:
                   summary: Redirect not found
                   value: { "errors": ["Redirect not found"] }
+        "419":
+          $ref: "#/components/responses/too_many_requests"
+        "500":
+          $ref: "#/components/responses/internal_server_error"
+
+  /mods:
+    post:
+      summary: Create Mod
+      description: |
+        Creates a mod.
+
+        The mod's id must be unique.
+      security:
+        - token: ["mod:create"]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/mod"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/mod"
+              examples:
+                mod:
+                  $ref: "#/components/examples/mod"
+        "400":
+          $ref: "#/components/responses/zod_error"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "419":
+          $ref: "#/components/responses/too_many_requests"
+        "500":
+          $ref: "#/components/responses/internal_server_error"
+
+  /mods/:id:
+    get:
+      summary: Get Mod
+      description: |
+        Returns a mod.
+
+        The mod's versions can be viewed with the [GET `/mods/:id/versions`](#/paths/~1mods~1:id~1versions/get) endpoint,
+        this endpoint is used to get the mod's basic data (name, homepage url).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            description: The mod's unique ID.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/mod"
+              examples:
+                mod:
+                  $ref: "#/components/examples/mod"
+        "400":
+          $ref: "#/components/responses/zod_error"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+              examples:
+                mod_not_found:
+                  summary: Mod not found
+                  value: { "errors": ["Mod not found"] }
+        "419":
+          $ref: "#/components/responses/too_many_requests"
+        "500":
+          $ref: "#/components/responses/internal_server_error"
+    put:
+      summary: Update Mod
+      security:
+        - token: ["mod:modify"]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            description: The mod's unique ID.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/partial_mod"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/mod"
+              examples:
+                mod:
+                  $ref: "#/components/examples/mod"
+        "400":
+          $ref: "#/components/responses/zod_error"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+              examples:
+                mod_not_found:
+                  summary: Mod not found
+                  value: { "errors": ["Mod not found"] }
+        "419":
+          $ref: "#/components/responses/too_many_requests"
+        "500":
+          $ref: "#/components/responses/internal_server_error"
+    delete:
+      summary: Delete Mod
+      security:
+        - token: ["mod:delete"]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            description: The mod's unique ID.
+      responses:
+        "204":
+          description: No Content
+        "400":
+          $ref: "#/components/responses/zod_error"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+              examples:
+                mod_not_found:
+                  summary: Mod not found
+                  value: { "errors": ["Mod not found"] }
+        "419":
+          $ref: "#/components/responses/too_many_requests"
+        "500":
+          $ref: "#/components/responses/internal_server_error"
+
+  /mods/:id/versions:
+    get:
+      summary: Get Mod Versions
+      description: |
+        Returns a mod's versions.
+
+        See more about the version scheme at the [POST `/mods/:id/versions`](#/paths/~1mods~1:id~1versions/post) endpoint.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            description: The mod's unique ID.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/version"
+              examples:
+                versions:
+                  $ref: "#/components/examples/versions"
+        "400":
+          $ref: "#/components/responses/zod_error"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+              examples:
+                mod_not_found:
+                  summary: Mod not found
+                  value: { "errors": ["Mod not found"] }
+        "419":
+          $ref: "#/components/responses/too_many_requests"
+        "500":
+          $ref: "#/components/responses/internal_server_error"
+    post:
+      summary: Create Mod Version
+      description: |
+        Creates a mod version.
+
+        The version ID must conform to the [semantic versioning](https://semver.org/spec/v2.0.0.html) standard. Any leading `v` or surrounding whitespace will be removed.
+
+        The version's "unique key" is the combination of the version's ID, modloader, and Minecraft version.<br>
+        That means there can be two versions with the same ID and modloader, but different Minecraft versions.<br>
+        Likewise there can also be two versions with the same ID and Minecraft version, but different modloaders.<br>
+
+        The `recommended` field is used to determine which version is stable, this is used for the [GET `/mods/:id/forge`](#/paths/~1mods~1:id~1forge/get) endpoint.<br>
+        The `changelog` field is used to store the version's changelog (duh!), this is also used for the [GET `/mods/:id/forge`](#/paths/~1mods~1:id~1forge/get) endpoint.
+
+        The dependencies are structured as such:
+          - `id`: The dependency's unique ID.
+          - `version`: The dependency's version.
+          - `required`: Whether the dependency is required or not.
+          - `side`: The dependency's side. This means that `"CLIENT"` means the dependency is only required on the client side,<br>
+            `"SERVER"` means the dependency is only required on the server side,<br>
+            `"BOTH"` is required both on the client and server.
+          - `version`: The dependency's version or version range. See [NPM's semver](https://nodejs.dev/learn/semantic-versioning-using-npm) for more information.
+      security:
+        - token: ["mod:modify"]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            description: The mod's unique ID.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/version"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/version"
+              examples:
+                version:
+                  $ref: "#/components/examples/version"
+        "400":
+          $ref: "#/components/responses/zod_error"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "419":
+          $ref: "#/components/responses/too_many_requests"
+        "500":
+          $ref: "#/components/responses/internal_server_error"
+    delete:
+      summary: Delete Mod Version
+      security:
+        - token: ["mod:delete"]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The mod's unique ID.
+        - name: version
+          in: query
+          required: true
+          schema:
+            type: string
+          description: The mod version's ID.
+        - name: loader
+          in: query
+          required: true
+          schema:
+            type: string
+          description: The mod loader.
+        - name: minecraft
+          in: query
+          required: true
+          schema:
+            type: string
+          description: The Minecraft version.
+      responses:
+        "204":
+          description: No Content
+        "400":
+          $ref: "#/components/responses/zod_error"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+              examples:
+                mod_not_found:
+                  summary: Mod not found
+                  value: { "errors": ["Mod not found", "Version not found"] }
+        "419":
+          $ref: "#/components/responses/too_many_requests"
+        "500":
+          $ref: "#/components/responses/internal_server_error"
+
+  /mods/:id/forge:
+    get:
+      summary: Get Forge Update JSON
+      description: |
+        Returns Forge Update JSON.
+
+        See: https://mcforge.readthedocs.io/en/latest/gettingstarted/autoupdate/#update-json-format
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            description: The mod's unique ID.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/forge_update_json"
+              examples:
+                forge_update_json:
+                  $ref: "#/components/examples/forge_update_json"
+        "400":
+          $ref: "#/components/responses/zod_error"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+              examples:
+                mod_not_found:
+                  summary: Mod not found
+                  value: { "errors": ["Mod not found"] }
         "419":
           $ref: "#/components/responses/too_many_requests"
         "500":

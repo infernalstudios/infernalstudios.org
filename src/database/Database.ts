@@ -148,6 +148,7 @@ export class Database {
         table.string("name", 255).notNullable();
         table.string("url", 511).notNullable();
         table.string("minecraft", 255).notNullable().index();
+        table.boolean("recommended").notNullable().defaultTo(false);
         table.string("changelog", 4095).notNullable();
         table.string("loader", 255).notNullable().index();
         table.string("mod", 255).notNullable();

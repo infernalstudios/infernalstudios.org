@@ -3,6 +3,7 @@ import helmet from "helmet";
 import { RateLimiterMemory } from "rate-limiter-flexible";
 import { Database } from "../database/Database";
 import { getAuthAPI } from "./AuthAPI";
+import { getModAPI } from "./ModAPI";
 import { getRedirectAPI } from "./RedirectAPI";
 import { StatusAPI } from "./StatusAPI";
 
@@ -60,7 +61,8 @@ export function getAPI(database: Database): Router {
 
   api.use("/status", StatusAPI);
   api.use("/auth", getAuthAPI(database));
-  api.use("/redirect", getRedirectAPI(database));
+  api.use("/redirects", getRedirectAPI(database));
+  api.use("/mods", getModAPI(database));
 
   return api;
 }

@@ -1,0 +1,43 @@
+
+  delete:
+    summary: Delete Token
+    description: |
+      Deletes a token.
+
+      A token can only be deleted if it is not expired.<br>
+      Expired tokens are automatically deleted every minute, there's no need to do it yourself.<br>
+      If an expired token hasn't been deleted yet, it will be deleted when it's used.<br>
+      A token can delete itself, and another token can delete it if it has the `"token:delete"` permission.<br>
+      Only tokens belonging to the same user can delete each other.
+    security:
+      - token: ["token:delete"]
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          description: The token's unique ID.
+    responses:
+      "204":
+        description: No Content
+      "400":
+        $ref: "#/components/responses/zod_error"
+      "401":
+        $ref: "#/components/responses/unauthorized"
+      "403":
+        $ref: "#/components/responses/forbidden"
+      "404":
+        description: Not Found
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/error"
+            examples:
+              token_not_found:
+                summary: Token not found
+                value: { "errors": ["Token not found"] }
+      "419":
+        $ref: "#/components/responses/too_many_requests"
+      "500":
+        $ref: "#/components/responses/internal_server_error"

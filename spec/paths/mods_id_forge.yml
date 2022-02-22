@@ -1,0 +1,44 @@
+
+  get:
+    summary: Get Forge Update JSON
+    description: |
+      Returns Forge Update JSON.
+
+      See: https://mcforge.readthedocs.io/en/latest/gettingstarted/autoupdate/#update-json-format
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          description: The mod's unique ID.
+    responses:
+      "200":
+        description: OK
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/forge_update_json"
+            examples:
+              forge_update_json:
+                $ref: "#/components/examples/forge_update_json"
+      "400":
+        $ref: "#/components/responses/zod_error"
+      "401":
+        $ref: "#/components/responses/unauthorized"
+      "403":
+        $ref: "#/components/responses/forbidden"
+      "404":
+        description: Not Found
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/error"
+            examples:
+              mod_not_found:
+                summary: Mod not found
+                value: { "errors": ["Mod not found"] }
+      "419":
+        $ref: "#/components/responses/too_many_requests"
+      "500":
+        $ref: "#/components/responses/internal_server_error"

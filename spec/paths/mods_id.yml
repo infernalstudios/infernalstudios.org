@@ -1,0 +1,126 @@
+
+  get:
+    summary: Get Mod
+    description: |
+      Returns a mod.
+
+      The mod's versions can be viewed with the [GET `/mods/:id/versions`](#/paths/~1mods~1:id~1versions/get) endpoint,
+      this endpoint is used to get the mod's basic data (name, homepage url).
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          description: The mod's unique ID.
+    responses:
+      "200":
+        description: OK
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/mod"
+            examples:
+              mod:
+                $ref: "#/components/examples/mod"
+      "400":
+        $ref: "#/components/responses/zod_error"
+      "401":
+        $ref: "#/components/responses/unauthorized"
+      "403":
+        $ref: "#/components/responses/forbidden"
+      "404":
+        description: Not Found
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/error"
+            examples:
+              mod_not_found:
+                summary: Mod not found
+                value: { "errors": ["Mod not found"] }
+      "419":
+        $ref: "#/components/responses/too_many_requests"
+      "500":
+        $ref: "#/components/responses/internal_server_error"
+  put:
+    summary: Update Mod
+    security:
+      - token: ["mod:modify"]
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          description: The mod's unique ID.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/partial_mod"
+    responses:
+      "200":
+        description: OK
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/mod"
+            examples:
+              mod:
+                $ref: "#/components/examples/mod"
+      "400":
+        $ref: "#/components/responses/zod_error"
+      "401":
+        $ref: "#/components/responses/unauthorized"
+      "403":
+        $ref: "#/components/responses/forbidden"
+      "404":
+        description: Not Found
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/error"
+            examples:
+              mod_not_found:
+                summary: Mod not found
+                value: { "errors": ["Mod not found"] }
+      "419":
+        $ref: "#/components/responses/too_many_requests"
+      "500":
+        $ref: "#/components/responses/internal_server_error"
+  delete:
+    summary: Delete Mod
+    security:
+      - token: ["mod:delete"]
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          description: The mod's unique ID.
+    responses:
+      "204":
+        description: No Content
+      "400":
+        $ref: "#/components/responses/zod_error"
+      "401":
+        $ref: "#/components/responses/unauthorized"
+      "403":
+        $ref: "#/components/responses/forbidden"
+      "404":
+        description: Not Found
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/error"
+            examples:
+              mod_not_found:
+                summary: Mod not found
+                value: { "errors": ["Mod not found"] }
+      "419":
+        $ref: "#/components/responses/too_many_requests"
+      "500":
+        $ref: "#/components/responses/internal_server_error"

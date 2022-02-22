@@ -14,14 +14,14 @@ too_many_requests:
               type: string
       examples:
         too_many_requests:
-          $ref: "#./examples/too_many_requests"
+          $ref: "#/components/examples/too_many_requests"
 
 internal_server_error:
   description: Internal Server Error
   content:
     application/json:
       schema:
-        $ref: "#./schemas/error"
+        $ref: "#/components/schemas/error"
       examples:
         internal_server_error:
           value: { "errors": ["An unexpected error occurred."] }
@@ -31,7 +31,7 @@ zod_error:
   content:
     application/json:
       schema:
-        $ref: "#./schemas/zod_error"
+        $ref: "#/components/schemas/zod_error"
       examples:
         zod_error:
           value:
@@ -47,7 +47,7 @@ unauthorized:
   content:
     application/json:
       schema:
-        $ref: "#./schemas/error"
+        $ref: "#/components/schemas/error"
       examples:
         invalid_auth:
           description: The below provided array of strings are the error messages for invalid authorization.
@@ -56,4 +56,16 @@ unauthorized:
               - "A token is required for this endpoint"
               - "The authorization header must be of type 'Bearer'"
               - "The provided token is invalid"
+
+forbidden:
+  description: Forbidden
+  content:
+    application/json:
+      schema:
+        $ref: "#/components/schemas/error"
+      examples:
+        invalid_auth:
+          description: The below provided array of strings are the error messages for invalid access.
+          value:
+            errors:
               - "Insufficient permissions"

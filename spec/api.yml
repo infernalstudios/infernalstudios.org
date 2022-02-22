@@ -14,8 +14,9 @@ info:
 
     When the [token](#section/Authentication/token) security scheme is defined
     for a request in this doc, it means that the request must be authenticated
-    with a valid token with the permission listed beside it. (Exception: the
-    [POST `/auth/token`](#/paths/~1auth~1token/post) endpoint does not require any permissions)
+    with a valid token with the permission listed beside it.<br>
+    Exceptions: 
+      - [POST `/auth/token`](#/paths/~1auth~1token/post)
 
     The following headers will always be present in responses:
 
@@ -38,15 +39,15 @@ servers:
 
 components:
   headers:
-    $ref: ./components/headers.yml
+    $ref: "./components/headers.yml"
   responses:
-    $ref: ./components/responses.yml
+    $ref: "./components/responses.yml"
   securitySchemes:
-    $ref: ./components/securitySchemes.yml
+    $ref: "./components/securitySchemes.yml"
   schemas:
-    $ref: ./components/schemas.yml
+    $ref: "./components/schemas.yml"
   examples:
-    $ref: ./components/examples.yml
+    $ref: "./components/examples.yml"
 
 paths:
   /status:
@@ -78,20 +79,20 @@ paths:
           $ref: "#/components/responses/too_many_requests"
 
   /auth/login:
-    $ref: "#./paths/auth/auth/login"
+    $ref: "./paths/auth_login.yml"
   /auth/token:
-    $ref: "#./paths/auth/auth/token"
-  /auth/token/:id:
-    $ref: "#./paths/auth/auth/token/:id"
+    $ref: "./paths/auth_token.yml"
+  /auth/token/{id}:
+    $ref: "./paths/auth_token_id.yml"
   /redirects:
-    $ref: "#./paths/redirects/redirects"
-  /redirects/:id:
-    $ref: "#./paths/redirects/redirects/:id"
+    $ref: "./paths/redirects.yml"
+  /redirects/{id}:
+    $ref: "./paths/redirects_id.yml"
   /mods:
-    $ref: "#./paths/mods/mods"
-  /mods/:id:
-    $ref: "#./paths/mods/mods/:id"
-  /mods/:id/versions:
-    $ref: "#./paths/mods/mods/:id/versions"
-  /mods/:id/forge:
-    $ref: "#./paths/mods/mods/:id/forge"
+    $ref: "./paths/mods.yml"
+  /mods/{id}:
+    $ref: "./paths/mods_id.yml"
+  /mods/{id}/versions:
+    $ref: "./paths/mods_id_versions.yml"
+  /mods/{id}/forge:
+    $ref: "./paths/mods_id_forge.yml"

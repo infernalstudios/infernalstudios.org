@@ -1,28 +1,30 @@
 
   post:
-    summary: Create Mod
+    summary: Create Token
     description: |
-      Creates a mod.
-
-      The mod's id must be unique.
+      Creates a token for the user.<br>
+      A token can only inherit its owner's permissions, it cannot have any additional permissions.
     security:
-      - token: ["mod:create"]
+      - token: []
+
     requestBody:
+      description: |
+        The request body must contain an object with a `"permissions"` array.
       required: true
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/mod"
+            $ref: "#/components/schemas/partial_token"
     responses:
-      "201":
-        description: Created
+      "200":
+        description: OK
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/mod"
+              $ref: "#/components/schemas/token"
             examples:
-              mod:
-                $ref: "#/components/examples/mod"
+              token:
+                $ref: "#/components/examples/token"
       "400":
         $ref: "#/components/responses/zod_error"
       "401":

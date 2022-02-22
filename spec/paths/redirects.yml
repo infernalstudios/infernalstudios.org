@@ -1,4 +1,4 @@
-/redirects:
+
   get:
     summary: Get Redirects
     description: |
@@ -13,14 +13,14 @@
             schema:
               type: array
               items:
-                $ref: "#../components/schemas/redirect"
+                $ref: "#/components/schemas/redirect"
             examples:
               redirects:
-                $ref: "#../components/examples/redirects"
+                $ref: "#/components/examples/redirects"
       "419":
-        $ref: "#../components/responses/too_many_requests"
+        $ref: "#/components/responses/too_many_requests"
       "500":
-        $ref: "#../components/responses/internal_server_error"
+        $ref: "#/components/responses/internal_server_error"
   post:
     summary: Create Redirect
     description: |
@@ -39,101 +39,24 @@
       content:
         application/json:
           schema:
-            $ref: "#../components/schemas/redirect"
+            $ref: "#/components/schemas/redirect"
     responses:
       "201":
         description: Created
         content:
           application/json:
             schema:
-              $ref: "#../components/schemas/redirect"
+              $ref: "#/components/schemas/redirect"
             examples:
               redirect:
-                $ref: "#../components/examples/redirect"
+                $ref: "#/components/examples/redirect"
       "400":
-        $ref: "#../components/responses/zod_error"
+        $ref: "#/components/responses/zod_error"
       "401":
-        $ref: "#../components/responses/unauthorized"
+        $ref: "#/components/responses/unauthorized"
+      "403":
+        $ref: "#/components/responses/forbidden"
       "419":
-        $ref: "#../components/responses/too_many_requests"
+        $ref: "#/components/responses/too_many_requests"
       "500":
-        $ref: "#../components/responses/internal_server_error"
-
-/redirects/:id:
-  put:
-    summary: Update Redirect
-    security:
-      - token: ["redirect:modify"]
-    parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-          description: The redirect's unique ID.
-    requestBody:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: "#../components/schemas/partial_redirect"
-    responses:
-      "200":
-        description: OK
-        content:
-          application/json:
-            schema:
-              $ref: "#../components/schemas/redirect"
-            examples:
-              redirect:
-                $ref: "#../components/examples/redirect"
-      "400":
-        $ref: "#../components/responses/zod_error"
-      "401":
-        $ref: "#../components/responses/unauthorized"
-      "404":
-        description: Not Found
-        content:
-          application/json:
-            schema:
-              $ref: "#../components/schemas/error"
-            examples:
-              redirect_not_found:
-                summary: Redirect not found
-                value: { "errors": ["Redirect not found"] }
-      "419":
-        $ref: "#../components/responses/too_many_requests"
-      "500":
-        $ref: "#../components/responses/internal_server_error"
-  delete:
-    summary: Delete Redirect
-    security:
-      - token: ["redirect:delete"]
-    parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-          description: The redirect's unique ID.
-    responses:
-      "204":
-        description: No Content
-      "400":
-        $ref: "#../components/responses/zod_error"
-      "401":
-        $ref: "#../components/responses/unauthorized"
-      "404":
-        description: Not Found
-        content:
-          application/json:
-            schema:
-              $ref: "#../components/schemas/error"
-            examples:
-              redirect_not_found:
-                summary: Redirect not found
-                value: { "errors": ["Redirect not found"] }
-      "419":
-        $ref: "#../components/responses/too_many_requests"
-      "500":
-        $ref: "#../components/responses/internal_server_error"
+        $ref: "#/components/responses/internal_server_error"

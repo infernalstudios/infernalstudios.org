@@ -1,3 +1,34 @@
+get:
+  summary: Check Token
+  description: |
+    Checks if the token is valid.
+
+  security:
+    - token: []
+
+  responses:
+    "200":
+      description: OK
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [valid]
+            properties:
+              valid:
+                type: boolean
+                description: Whether or not the token is valid.
+          examples:
+            validToken:
+              summary: Valid Token
+              value: { "valid": true }
+            invalidToken:
+              summary: Invalid Token
+              value: { "valid": false }
+    "419":
+      $ref: "#/components/responses/too_many_requests"
+    "500":
+      $ref: "#/components/responses/internal_server_error"
 post:
   summary: Create Token
   description: |

@@ -36,6 +36,33 @@ export function getAuthAPI(database: Database): Router {
     return res.end();
   });
 
+  api.get("/token", async (req, res) => {
+    res.status(200);
+    if (!req.headers.authorization || req.headers.authorization.split(" ", 1)[0].toLowerCase() !== "bearer") {
+      res.json({
+        valid: false,
+      });
+      return res.end();
+    }
+
+    const token = await database.tokens.get(req.headers.authorization.slice(7) /* Removes the "bearer " prefix */);
+
+    if (!token || token.isExpired()) {
+      if (token?.isExpired()) {
+        token.delete();
+      }
+      res.json({
+        valid: false,
+      });
+      return res.end();
+    }
+
+    res.json({
+      valid: true,
+    });
+    return res.end();
+  });
+
   const postTokenSchema = z
     .object({
       expiry: z.number().int().positive().optional(),

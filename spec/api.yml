@@ -16,6 +16,7 @@ info:
     for a request in this doc, it means that the request must be authenticated
     with a valid token with the permission listed beside it.<br>
     Exceptions: 
+      - [GET `/auth/token`](#/paths/~1auth~1token/get)
       - [POST `/auth/token`](#/paths/~1auth~1token/post)
       - [GET `/user/self`](#/paths/~1user~1self/get)
       - [PUT `/user/self`](#/paths/~1user~1self/put)

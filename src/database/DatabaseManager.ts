@@ -107,10 +107,26 @@ export class UserManager extends DatabaseManager<UserSchema, User> {
     super(database, "users", (schema, database) => new User(schema, database));
   }
 
-  public override async create(user: UserSchema): Promise<User> {
-    user.password = await hashPassword(user.password, user.salt);
-    const newSchemaClass = await this.database.sql.insert(user).into(this.name).returning("*");
+  public async createUser(id: string, password: string): Promise<User> {
+    const salt = randomString(32);
+    password = await hashPassword(password, salt);
+
+    const newSchemaClass = await this.database.sql
+      .insert({
+        id,
+        password,
+        permissions: [],
+        passwordChangeRequested: true,
+        salt,
+      })
+      .into(this.name)
+      .returning("*");
     return this.classConstructor(newSchemaClass[0], this.database);
+  }
+
+  /** @deprecated Use {@link createUser} instead */
+  public override async create(user: UserSchema): Promise<User> {
+    return await super.create(user);
   }
 
   public async getByToken(tokenId: string): Promise<User | undefined> {

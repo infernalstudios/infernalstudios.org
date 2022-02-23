@@ -1,0 +1,52 @@
+get:
+  summary: Get Self
+  security:
+    - token: []
+  responses:
+    "200":
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/safe_user"
+          examples:
+            user:
+              $ref: "#/components/examples/user"
+    "401":
+      $ref: "#/components/responses/unauthorized"
+    "403":
+      $ref: "#/components/responses/forbidden"
+    "419":
+      $ref: "#/components/responses/too_many_requests"
+    "500":
+      $ref: "#/components/responses/internal_server_error"
+put:
+  summary: Update Self
+  security:
+    - token: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "#/components/schemas/password_object"
+  responses:
+    "200":
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/safe_user"
+          examples:
+            user:
+              $ref: "#/components/examples/user"
+    "400":
+      $ref: "#/components/responses/zod_error"
+    "401":
+      $ref: "#/components/responses/unauthorized"
+    "403":
+      $ref: "#/components/responses/forbidden"
+    "419":
+      $ref: "#/components/responses/too_many_requests"
+    "500":
+      $ref: "#/components/responses/internal_server_error"

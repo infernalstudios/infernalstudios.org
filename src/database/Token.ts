@@ -1,6 +1,39 @@
 import { Database } from "./Database";
 import { User } from "./User";
 
+type Permission =
+  | "self:modify"
+  | "user:create"
+  | "user:modify"
+  | "user:delete"
+  | "user:view"
+  | "token:delete"
+  | "mod:create"
+  | "mod:modify"
+  | "mod:delete"
+  | "redirect:create"
+  | "redirect:modify"
+  | "redirect:delete"
+  | "admin"
+  | "superadmin";
+
+const PERMISSIONS: Permission[] = [
+  "self:modify", // Users can modify their own data. Users always have this permission, this can be granted to tokens
+  "user:create", // Users can create new users (symbolic, requires superadmin)
+  "user:modify", // Users can modify other users' data
+  "user:delete", // Users can delete other users' data (symbolic, requires superadmin)
+  "user:view", // Users can view other users' data
+  "token:delete", // Users can delete own tokens. Users always have this permission, this can be granted to tokens. Tokens can always delete themselves
+  "mod:create", // Users can create new mods
+  "mod:modify", // Users can modify existing mods
+  "mod:delete", // Users can delete existing mods
+  "redirect:create", // Users can create new redirects
+  "redirect:modify", // Users can modify existing redirects
+  "redirect:delete", // Users can delete existing redirects
+  "admin", // Users can do anything, except delete other users' data and accounts
+  "superadmin", // Users can do anything, including delete other users' data and accounts
+];
+
 export class Token {
   private id: string;
   private user: string;
@@ -52,8 +85,15 @@ export class Token {
 
   public async hasPermission(permission: string): Promise<boolean> {
     return (
-      this.permissions.some(p => p === permission || p === "admin" || p === "superadmin") &&
-      (await this.getUser()).hasPermission(permission)
+      this.permissions.some(p => {
+        if (p === "superadmin") {
+          return true;
+        } else if (p === "admin") {
+          return permission !== "user:delete" && permission !== "user:create";
+        } else {
+          return p === permission;
+        }
+      }) && (await this.getUser()).hasPermission(permission)
     );
   }
 
@@ -93,23 +133,10 @@ export class Token {
     };
   }
 
-  private static PERMISSIONS: string[] = [
-    "self:modify", // Users can modify their own data. Users always have this permission, this can be granted to tokens
-    "user:modify", // Users can modify other users' data
-    "user:view", // Users can view other users' data
-    "token:delete", // Users can delete own tokens. Users always have this permission, this can be granted to tokens. Tokens can always delete themselves
-    "mod:create", // Users can create new mods
-    "mod:modify", // Users can modify existing mods
-    "mod:delete", // Users can delete existing mods
-    "redirect:create", // Users can create new redirects
-    "redirect:modify", // Users can modify existing redirects
-    "redirect:delete", // Users can delete existing redirects
-    "admin", // Users can do anything, except delete other users' data and accounts
-    "superadmin", // Users can do anything, including delete other users' data and accounts
-  ] as string[];
+  public static readonly PERMISSIONS = PERMISSIONS;
 
   public static isPermissionValid(permission: string): boolean {
-    return Token.PERMISSIONS.includes(permission);
+    return Token.PERMISSIONS.includes(permission as Permission);
   }
 }
 

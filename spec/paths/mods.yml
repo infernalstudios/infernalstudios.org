@@ -1,35 +1,34 @@
+post:
+  summary: Create Mod
+  description: |
+    Creates a mod.
 
-  post:
-    summary: Create Mod
-    description: |
-      Creates a mod.
-
-      The mod's id must be unique.
-    security:
-      - token: ["mod:create"]
-    requestBody:
-      required: true
+    The mod's id must be unique.
+  security:
+    - token: ["mod:create"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "#/components/schemas/mod"
+  responses:
+    "201":
+      description: Created
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/mod"
-    responses:
-      "201":
-        description: Created
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/mod"
-            examples:
-              mod:
-                $ref: "#/components/examples/mod"
-      "400":
-        $ref: "#/components/responses/zod_error"
-      "401":
-        $ref: "#/components/responses/unauthorized"
-      "403":
-        $ref: "#/components/responses/forbidden"
-      "419":
-        $ref: "#/components/responses/too_many_requests"
-      "500":
-        $ref: "#/components/responses/internal_server_error"
+          examples:
+            mod:
+              $ref: "#/components/examples/mod"
+    "400":
+      $ref: "#/components/responses/zod_error"
+    "401":
+      $ref: "#/components/responses/unauthorized"
+    "403":
+      $ref: "#/components/responses/forbidden"
+    "419":
+      $ref: "#/components/responses/too_many_requests"
+    "500":
+      $ref: "#/components/responses/internal_server_error"

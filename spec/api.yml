@@ -17,6 +17,8 @@ info:
     with a valid token with the permission listed beside it.<br>
     Exceptions: 
       - [POST `/auth/token`](#/paths/~1auth~1token/post)
+      - [GET `/user/self`](#/paths/~1user~1self/get)
+      - [PUT `/user/self`](#/paths/~1user~1self/put)
 
     The following headers will always be present in responses:
 
@@ -96,3 +98,9 @@ paths:
     $ref: "./paths/mods_id_versions.yml"
   /mods/{id}/forge:
     $ref: "./paths/mods_id_forge.yml"
+  /users:
+    $ref: "./paths/users.yml"
+  /users/{id}:
+    $ref: "./paths/users_id.yml"
+  /users/self:
+    $ref: "./paths/users_self.yml"

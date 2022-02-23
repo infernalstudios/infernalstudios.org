@@ -6,9 +6,8 @@ import { getAuthAPI } from "./AuthAPI";
 import { getModAPI } from "./ModAPI";
 import { getRedirectAPI } from "./RedirectAPI";
 import { StatusAPI } from "./StatusAPI";
+import { getUserAPI } from "./UserAPI";
 
-// TODO: rembet to remove this
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function getAPI(database: Database): Router {
   const api = Router();
 
@@ -63,6 +62,7 @@ export function getAPI(database: Database): Router {
   api.use("/auth", getAuthAPI(database));
   api.use("/redirects", getRedirectAPI(database));
   api.use("/mods", getModAPI(database));
+  api.use("/users", getUserAPI(database));
 
   return api;
 }

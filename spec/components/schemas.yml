@@ -170,6 +170,59 @@ forge_update_json:
           type: string
           description: The changelog for the version.
 
+user:
+  type: object
+  required: [id, password, permissions]
+  properties:
+    id:
+      type: string
+      description: The user's unique ID.
+    password:
+      type: string
+      description: The user's password.
+    permissions:
+      type: array
+      description: The user's permissions.
+      items:
+        type: string
+    passwordChangeRequested:
+      type: boolean
+      description: Whether or not the system or an admin has requested a password change.
+
+partial_user:
+  type: object
+  properties:
+    password:
+      $ref: "#/user/properties/password"
+    permissions:
+      $ref: "#/user/properties/permissions"
+
+password_object:
+  type: object
+  properties:
+    password:
+      $ref: "#/user/properties/password"
+
+safe_user:
+  type: object
+  required: [id, permissions]
+  properties:
+    id:
+      $ref: "#/user/properties/id"
+    permissions:
+      $ref: "#/user/properties/permissions"
+    passwordChangeRequested:
+      $ref: "#/user/properties/passwordChangeRequested"
+
+initial_user:
+  type: object
+  required: [id, password]
+  properties:
+    id:
+      $ref: "#/user/properties/id"
+    password:
+      $ref: "#/user/properties/password"
+
 error:
   type: array
   items:

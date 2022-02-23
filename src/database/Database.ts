@@ -136,6 +136,7 @@ export class Database {
         table.string("password", 128).notNullable();
         table.string("salt", 32).notNullable();
         table.specificType("permissions", "varchar(64) array").notNullable();
+        table.boolean("passwordChangeRequested").notNullable().defaultTo(false);
       });
     }
   }

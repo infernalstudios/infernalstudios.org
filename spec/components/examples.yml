@@ -13,7 +13,9 @@ token:
     expiry: 1577880000
     permissions:
       - "self:modify"
+      - "user:create"
       - "user:modify"
+      - "user:delete"
       - "user:view"
       - "token:delete"
       - "mod:create"
@@ -108,3 +110,26 @@ forge_update_json:
       1.18.1-recommended: "1.0.0"
     "1.18.1":
       "1.0.0": Added epic new stuff!
+
+users:
+  summary: Users
+  value:
+    - id: "admin"
+      permissions: ["admin"]
+      passwordChangeRequested: false
+    - id: "owner"
+      permissions: ["superadmin"]
+      passwordChangeRequested: false
+    - id: "developer"
+      permissions: ["mod:create", "mod:modify", "mod:delete"]
+      passwordChangeRequested: false
+    - id: "manager"
+      permissions: ["redirect:create", "redirect:modify", "redirect:delete"]
+      passwordChangeRequested: false
+
+user:
+  summary: User
+  value:
+    id: "peasant"
+    permissions: []
+    passwordChangeRequested: true

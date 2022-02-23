@@ -1,155 +1,154 @@
+get:
+  summary: Get Mod Versions
+  description: |
+    Returns a mod's versions.
 
-  get:
-    summary: Get Mod Versions
-    description: |
-      Returns a mod's versions.
-
-      See more about the version scheme at the [POST `/mods/:id/versions`](#/paths/~1mods~1:id~1versions/post) endpoint.
-    parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-          description: The mod's unique ID.
-    responses:
-      "200":
-        description: OK
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                $ref: "#/components/schemas/version"
-            examples:
-              versions:
-                $ref: "#/components/examples/versions"
-      "400":
-        $ref: "#/components/responses/zod_error"
-      "401":
-        $ref: "#/components/responses/unauthorized"
-      "403":
-        $ref: "#/components/responses/forbidden"
-      "404":
-        description: Not Found
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/error"
-            examples:
-              mod_not_found:
-                summary: Mod not found
-                value: { "errors": ["Mod not found"] }
-      "419":
-        $ref: "#/components/responses/too_many_requests"
-      "500":
-        $ref: "#/components/responses/internal_server_error"
-  post:
-    summary: Create Mod Version
-    description: |
-      Creates a mod version.
-
-      The version ID must conform to the [semantic versioning](https://semver.org/spec/v2.0.0.html) standard. Any leading `v` or surrounding whitespace will be removed.
-
-      The version's "unique key" is the combination of the version's ID, modloader, and Minecraft version.<br>
-      That means there can be two versions with the same ID and modloader, but different Minecraft versions.<br>
-      Likewise there can also be two versions with the same ID and Minecraft version, but different modloaders.<br>
-
-      The `recommended` field is used to determine which version is stable, this is used for the [GET `/mods/:id/forge`](#/paths/~1mods~1:id~1forge/get) endpoint.<br>
-      The `changelog` field is used to store the version's changelog (duh!), this is also used for the [GET `/mods/:id/forge`](#/paths/~1mods~1:id~1forge/get) endpoint.
-
-      The dependencies are structured as such:
-        - `id`: The dependency's unique ID.
-        - `version`: The dependency's version.
-        - `required`: Whether the dependency is required or not.
-        - `side`: The dependency's side. This means that `"CLIENT"` means the dependency is only required on the client side,<br>
-          `"SERVER"` means the dependency is only required on the server side,<br>
-          `"BOTH"` is required both on the client and server.
-        - `version`: The dependency's version or version range. See [NPM's semver](https://nodejs.dev/learn/semantic-versioning-using-npm) for more information.
-    security:
-      - token: ["mod:modify"]
-    parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-          description: The mod's unique ID.
-    requestBody:
+    See more about the version scheme at the [POST `/mods/:id/versions`](#/paths/~1mods~1:id~1versions/post) endpoint.
+  parameters:
+    - name: id
+      in: path
       required: true
+      schema:
+        type: string
+        description: The mod's unique ID.
+  responses:
+    "200":
+      description: OK
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/version"
+          examples:
+            versions:
+              $ref: "#/components/examples/versions"
+    "400":
+      $ref: "#/components/responses/zod_error"
+    "401":
+      $ref: "#/components/responses/unauthorized"
+    "403":
+      $ref: "#/components/responses/forbidden"
+    "404":
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error"
+          examples:
+            mod_not_found:
+              summary: Mod not found
+              value: { "errors": ["Mod not found"] }
+    "419":
+      $ref: "#/components/responses/too_many_requests"
+    "500":
+      $ref: "#/components/responses/internal_server_error"
+post:
+  summary: Create Mod Version
+  description: |
+    Creates a mod version.
+
+    The version ID must conform to the [semantic versioning](https://semver.org/spec/v2.0.0.html) standard. Any leading `v` or surrounding whitespace will be removed.
+
+    The version's "unique key" is the combination of the version's ID, modloader, and Minecraft version.<br>
+    That means there can be two versions with the same ID and modloader, but different Minecraft versions.<br>
+    Likewise there can also be two versions with the same ID and Minecraft version, but different modloaders.<br>
+
+    The `recommended` field is used to determine which version is stable, this is used for the [GET `/mods/:id/forge`](#/paths/~1mods~1:id~1forge/get) endpoint.<br>
+    The `changelog` field is used to store the version's changelog (duh!), this is also used for the [GET `/mods/:id/forge`](#/paths/~1mods~1:id~1forge/get) endpoint.
+
+    The dependencies are structured as such:
+      - `id`: The dependency's unique ID.
+      - `version`: The dependency's version.
+      - `required`: Whether the dependency is required or not.
+      - `side`: The dependency's side. This means that `"CLIENT"` means the dependency is only required on the client side,<br>
+        `"SERVER"` means the dependency is only required on the server side,<br>
+        `"BOTH"` is required both on the client and server.
+      - `version`: The dependency's version or version range. See [NPM's semver](https://nodejs.dev/learn/semantic-versioning-using-npm) for more information.
+  security:
+    - token: ["mod:modify"]
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        description: The mod's unique ID.
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "#/components/schemas/version"
+  responses:
+    "201":
+      description: Created
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/version"
-    responses:
-      "201":
-        description: Created
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/version"
-            examples:
-              version:
-                $ref: "#/components/examples/version"
-      "400":
-        $ref: "#/components/responses/zod_error"
-      "401":
-        $ref: "#/components/responses/unauthorized"
-      "403":
-        $ref: "#/components/responses/forbidden"
-      "419":
-        $ref: "#/components/responses/too_many_requests"
-      "500":
-        $ref: "#/components/responses/internal_server_error"
-  delete:
-    summary: Delete Mod Version
-    security:
-      - token: ["mod:delete"]
-    parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-        description: The mod's unique ID.
-      - name: version
-        in: query
-        required: true
-        schema:
-          type: string
-        description: The mod version's ID.
-      - name: loader
-        in: query
-        required: true
-        schema:
-          type: string
-        description: The mod loader.
-      - name: minecraft
-        in: query
-        required: true
-        schema:
-          type: string
-        description: The Minecraft version.
-    responses:
-      "204":
-        description: No Content
-      "400":
-        $ref: "#/components/responses/zod_error"
-      "401":
-        $ref: "#/components/responses/unauthorized"
-      "403":
-        $ref: "#/components/responses/forbidden"
-      "404":
-        description: Not Found
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/error"
-            examples:
-              mod_not_found:
-                summary: Mod not found
-                value: { "errors": ["Mod not found", "Version not found"] }
-      "419":
-        $ref: "#/components/responses/too_many_requests"
-      "500":
-        $ref: "#/components/responses/internal_server_error"
+          examples:
+            version:
+              $ref: "#/components/examples/version"
+    "400":
+      $ref: "#/components/responses/zod_error"
+    "401":
+      $ref: "#/components/responses/unauthorized"
+    "403":
+      $ref: "#/components/responses/forbidden"
+    "419":
+      $ref: "#/components/responses/too_many_requests"
+    "500":
+      $ref: "#/components/responses/internal_server_error"
+delete:
+  summary: Delete Mod Version
+  security:
+    - token: ["mod:delete"]
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: The mod's unique ID.
+    - name: version
+      in: query
+      required: true
+      schema:
+        type: string
+      description: The mod version's ID.
+    - name: loader
+      in: query
+      required: true
+      schema:
+        type: string
+      description: The mod loader.
+    - name: minecraft
+      in: query
+      required: true
+      schema:
+        type: string
+      description: The Minecraft version.
+  responses:
+    "204":
+      description: No Content
+    "400":
+      $ref: "#/components/responses/zod_error"
+    "401":
+      $ref: "#/components/responses/unauthorized"
+    "403":
+      $ref: "#/components/responses/forbidden"
+    "404":
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error"
+          examples:
+            mod_not_found:
+              summary: Mod not found
+              value: { "errors": ["Mod not found", "Version not found"] }
+    "419":
+      $ref: "#/components/responses/too_many_requests"
+    "500":
+      $ref: "#/components/responses/internal_server_error"

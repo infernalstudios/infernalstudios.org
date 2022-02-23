@@ -1,0 +1,66 @@
+get:
+  summary: Get Users
+  description: |
+    Returns all users.
+
+    The users aren't sorted, they're returned in the order they were returned by the database.
+  security:
+    - token: ["user:view"]
+  responses:
+    "200":
+      description: OK
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/safe_user"
+          examples:
+            users:
+              $ref: "#/components/examples/users"
+    "401":
+      $ref: "#/components/responses/unauthorized"
+    "403":
+      $ref: "#/components/responses/forbidden"
+    "419":
+      $ref: "#/components/responses/too_many_requests"
+    "500":
+      $ref: "#/components/responses/internal_server_error"
+post:
+  summary: Create User
+  description: |
+    Creates a user.
+
+    Users can only be created by other users with the `user:create` permission.<br>
+    Newly created users automatically have the `passwordChangeRequested` flag.<br>
+    The `password` field must not be hashed in any way, this is done by the server.
+    It is recommended that you connect to the server through TLS (HTTPS) to prevent
+    password sniffing.
+  security:
+    - token: ["user:create"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "#/components/schemas/initial_user"
+  responses:
+    "201":
+      description: Created
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/safe_user"
+          examples:
+            user:
+              $ref: "#/components/examples/user"
+    "400":
+      $ref: "#/components/responses/zod_error"
+    "401":
+      $ref: "#/components/responses/unauthorized"
+    "403":
+      $ref: "#/components/responses/forbidden"
+    "419":
+      $ref: "#/components/responses/too_many_requests"
+    "500":
+      $ref: "#/components/responses/internal_server_error"

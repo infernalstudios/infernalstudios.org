@@ -1,58 +1,57 @@
+post:
+  summary: Login
+  description: |
+    Logs in the user and returns a token.
+    The token is practically unexpireable.
+  security:
+    - login: []
 
-  post:
-    summary: Login
+  requestBody:
     description: |
-      Logs in the user and returns a token.
-      The token is practically unexpireable.
-    security:
-      - login: []
-
-    requestBody:
-      description: |
-        The request body must contain the username and password of the user.
-      required: true
+      The request body must contain the username and password of the user.
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          required: [username, password]
+          properties:
+            username:
+              type: string
+              description: |
+                The username of the user.
+            password:
+              type: string
+              description: |
+                The password of the user.<br>
+                The password must not be hashed by the client, the server does it automatically.<br>
+                Because of this, the api call should be made through HTTPS.
+        examples:
+          login:
+            value: { "username": "admin", "password": "really_secure_PASSW0RD" }
+  responses:
+    "200":
+      description: OK
       content:
         application/json:
           schema:
-            type: object
-            required: [username, password]
-            properties:
-              username:
-                type: string
-                description: |
-                  The username of the user.
-              password:
-                type: string
-                description: |
-                  The password of the user.<br>
-                  The password must not be hashed by the client, the server does it automatically.<br>
-                  Because of this, the api call should be made through HTTPS.
+            $ref: "#/components/schemas/token"
           examples:
-            login:
-              value: { "username": "admin", "password": "really_secure_PASSW0RD" }
-    responses:
-      "200":
-        description: OK
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/token"
-            examples:
-              token:
-                $ref: "#/components/examples/token"
-      "400":
-        $ref: "#/components/responses/zod_error"
-      "401":
-        description: Unauthorized
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/error"
-            examples:
-              invalid_credentials:
-                summary: Invalid credentials
-                value: { "errors": ["Invalid username or password"] }
-      "419":
-        $ref: "#/components/responses/too_many_requests"
-      "500":
-        $ref: "#/components/responses/internal_server_error"
+            token:
+              $ref: "#/components/examples/token"
+    "400":
+      $ref: "#/components/responses/zod_error"
+    "401":
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error"
+          examples:
+            invalid_credentials:
+              summary: Invalid credentials
+              value: { "errors": ["Invalid username or password"] }
+    "419":
+      $ref: "#/components/responses/too_many_requests"
+    "500":
+      $ref: "#/components/responses/internal_server_error"

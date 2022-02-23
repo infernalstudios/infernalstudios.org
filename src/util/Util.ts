@@ -23,6 +23,14 @@ declare global {
 
 export function getAuthMiddleware(
   database: Database,
+  permissions?: typeof Token.PERMISSIONS
+): (req: Request, res: Response, next: NextFunction) => void;
+export function getAuthMiddleware(
+  database: Database,
+  permissions?: string[]
+): (req: Request, res: Response, next: NextFunction) => void;
+export function getAuthMiddleware(
+  database: Database,
   permissions: string[] = []
 ): (req: Request, res: Response, next: NextFunction) => void {
   return async (req, res, next) => {
@@ -58,7 +66,12 @@ export function getAuthMiddleware(
 
     req.token = token;
 
-    if (!permissions.every(permission => token.hasPermission(permission))) {
+    if (
+      permissions.length === 0 ||
+      (await Promise.all(permissions.map(permission => token.hasPermission(permission)))).some(
+        hasPermission => !hasPermission
+      )
+    ) {
       res.status(403);
       res.json({
         errors: ["Insufficient permissions"],

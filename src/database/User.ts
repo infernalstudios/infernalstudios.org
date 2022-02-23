@@ -7,6 +7,7 @@ export class User {
   private password: string;
   private salt: string;
   private permissions: string[];
+  private passwordChangeRequested: boolean;
   private database: Database;
 
   public constructor(user: UserSchema, database: Database) {
@@ -14,6 +15,7 @@ export class User {
     this.password = user.password;
     this.salt = user.salt;
     this.permissions = user.permissions;
+    this.passwordChangeRequested = user.passwordChangeRequested;
     this.database = database;
   }
 
@@ -37,8 +39,18 @@ export class User {
     return this.permissions;
   }
 
+  public getPasswordChangeRequested(): boolean {
+    return this.passwordChangeRequested;
+  }
+
   public hasPermission(permission: string): boolean {
-    return this.permissions.some(p => p === permission || p === "admin" || p === "superadmin");
+    if (permission === "self:modify" || permission === "token:delete" || this.permissions.includes("superadmin")) {
+      return true;
+    } else if (this.permissions.includes("admin")) {
+      return permission !== "user:delete" && permission !== "user:create";
+    } else {
+      return this.permissions.includes(permission);
+    }
   }
 
   public async setUsername(username: string): Promise<void> {
@@ -56,17 +68,45 @@ export class User {
     this.password = newPassword;
   }
 
+  public async setPermissions(permissions: string[]): Promise<void> {
+    const newPermissions = (
+      await this.database.sql.from("users").where({ id: this.id }).update({ permissions }).returning("*")
+    )[0].permissions;
+    this.permissions = newPermissions;
+  }
+
+  public async setPasswordChangeRequested(passwordChangeRequested: boolean): Promise<void> {
+    const newPasswordChangeRequested = (
+      await this.database.sql.from("users").where({ id: this.id }).update({ passwordChangeRequested }).returning("*")
+    )[0].passwordChangeRequested;
+    this.passwordChangeRequested = newPasswordChangeRequested;
+  }
+
   public async matchPassword(password: string): Promise<boolean> {
     return (await hashPassword(password, this.salt)) === this.password;
   }
 
-  public async toJSON(): Promise<UserSchema> {
+  public toJSON(): UserSchema {
     return {
       id: this.id,
       password: this.password,
       salt: this.salt,
       permissions: this.permissions,
+      passwordChangeRequested: this.passwordChangeRequested,
     };
+  }
+
+  public static sanitizeJSON(user: User | UserSchema): Omit<UserSchema, "password" | "salt"> {
+    if (user instanceof User) {
+      user = user.toJSON();
+    }
+
+    // @ts-expect-error - YES TYPESCRIPT I KNOW THAT IT ISN'T POSSIBLE TO DELETE REQUIRED FIELDS I'M DELETING THEM SO THE'YERE UNDEFINED SO I CAN RETURN THEM SAFELY
+    delete user.password;
+    // @ts-expect-error lmao look up
+    delete user.salt;
+
+    return user;
   }
 }
 
@@ -75,4 +115,5 @@ export interface UserSchema {
   password: string;
   salt: string;
   permissions: string[];
+  passwordChangeRequested: boolean;
 }

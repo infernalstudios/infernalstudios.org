@@ -67,7 +67,7 @@ export function getAuthMiddleware(
     req.token = token;
 
     if (
-      permissions.length === 0 ||
+      permissions.length !== 0 &&
       (await Promise.all(permissions.map(permission => token.hasPermission(permission)))).some(
         hasPermission => !hasPermission
       )

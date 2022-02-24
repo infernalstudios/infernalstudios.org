@@ -67,7 +67,7 @@ export function getAuthAPI(database: Database): Router {
     .object({
       expiry: z.number().int().positive().optional(),
       reason: z.string().max(255).optional(),
-      permissions: z.array(z.string()).refine(perms => perms.some(p => Token.isPermissionValid(p))),
+      permissions: z.array(z.string()).refine(perms => perms.every(p => !Token.isPermissionValid(p))),
     })
     .strict();
 

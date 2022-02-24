@@ -73,7 +73,7 @@ export function getUserAPI(database: Database): Router {
       password: z.string().max(255).optional(),
       permissions: z
         .array(z.string())
-        .refine(perms => perms.some(p => Token.isPermissionValid(p)))
+        .refine(perms => perms.every(p => !Token.isPermissionValid(p)))
         .optional(),
       passwordChangeRequested: z.boolean().optional(),
     })

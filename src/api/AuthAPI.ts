@@ -2,6 +2,7 @@ import express, { Router } from "express";
 import { z } from "zod";
 import { Database } from "../database/Database";
 import { Token } from "../database/Token";
+import { User, UserSchema } from "../database/User";
 import { getAuthMiddleware } from "../util/Util";
 
 export function getAuthAPI(database: Database): Router {
@@ -17,8 +18,20 @@ export function getAuthAPI(database: Database): Router {
   api.post("/login", express.json());
   api.post("/login", async (req, res) => {
     const { username, password } = loginSchema.parse(req.body);
-    const user = await database.users.get(username);
-    if (!user || !(await user.matchPassword(password))) {
+    const users = await database.users.getAllJSON();
+    let user: UserSchema | User | undefined = users.find(u => u.id.toLowerCase() === username.toLowerCase());
+
+    if (!user) {
+      res.status(401);
+      res.json({
+        errors: ["Invalid username or password"],
+      });
+      return res.end();
+    }
+
+    user = new User(user, database);
+
+    if (!(await user.matchPassword(password))) {
       res.status(401);
       res.json({
         errors: ["Invalid username or password"],

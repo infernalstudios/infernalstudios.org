@@ -15,6 +15,22 @@ export function getUserAPI(database: Database): Router {
     return res.end();
   });
 
+  api.get("/self", getAuthMiddleware(database));
+  api.get("/self", async (req, res) => {
+    const user = await req.user;
+    if (!user) {
+      res.status(500);
+      res.json({
+        errors: ["Unknown user"],
+      });
+      return res.end();
+    }
+
+    res.status(200);
+    res.json(User.sanitizeJSON(user));
+    return res.end();
+  });
+
   api.get("/:id", getAuthMiddleware(database, ["user:view"]));
   api.get("/:id", async (req, res) => {
     const { id } = req.params;
@@ -30,13 +46,6 @@ export function getUserAPI(database: Database): Router {
 
     res.status(200);
     res.json(User.sanitizeJSON(user));
-    return res.end();
-  });
-
-  api.get("/self", getAuthMiddleware(database));
-  api.get("/self", async (_req, res) => {
-    res.status(200);
-    res.json((await database.users.getAllJSON()).map(user => User.sanitizeJSON(user)));
     return res.end();
   });
 
@@ -79,6 +88,35 @@ export function getUserAPI(database: Database): Router {
     })
     .strict();
 
+  const putSelfSchema = putUserSchema.omit({ permissions: true, passwordChangeRequested: true });
+
+  api.put("/self", express.json());
+  api.put("/self", getAuthMiddleware(database, ["self:modify"]));
+  api.put("/self", async (req, res) => {
+    const { password } = putSelfSchema.parse(req.body);
+
+    const user = await req.user;
+    if (!user) {
+      res.status(404);
+      res.json({
+        errors: ["User not found"],
+      });
+      return res.end();
+    }
+
+    const promises: Promise<unknown>[] = [];
+
+    if (password) {
+      promises.push(user.setPassword(password));
+    }
+
+    await Promise.all(promises);
+
+    res.status(200);
+    res.json(User.sanitizeJSON(user));
+    return res.end();
+  });
+
   api.put("/:id", express.json());
   api.put("/:id", getAuthMiddleware(database, ["user:modify"]));
   api.put("/:id", async (req, res) => {
@@ -114,34 +152,6 @@ export function getUserAPI(database: Database): Router {
         return res.end();
       }
       promises.push(user.setPermissions(permissions.filter(p => adminUser.hasPermission(p))));
-    }
-
-    await Promise.all(promises);
-
-    res.status(200);
-    res.json(User.sanitizeJSON(user));
-    return res.end();
-  });
-
-  const putSelfSchema = putUserSchema.omit({ permissions: true, passwordChangeRequested: true });
-  api.put("/self", express.json());
-  api.put("/self", getAuthMiddleware(database, ["self:modify"]));
-  api.put("/self", async (req, res) => {
-    const { password } = putSelfSchema.parse(req.body);
-
-    const user = await req.user;
-    if (!user) {
-      res.status(404);
-      res.json({
-        errors: ["User not found"],
-      });
-      return res.end();
-    }
-
-    const promises: Promise<unknown>[] = [];
-
-    if (password) {
-      promises.push(user.setPassword(password));
     }
 
     await Promise.all(promises);

@@ -41,7 +41,7 @@ export function getAuthAPI(database: Database): Router {
 
     const token = await database.tokens.createToken(
       user.getUsername(),
-      user.getPermissions(),
+      Token.PERMISSIONS.filter(p => (user as User).hasPermission(p)),
       `Login at ${new Date().toISOString()} from ${req.ip}`
     );
 

@@ -88,12 +88,12 @@ export function getUserAPI(database: Database): Router {
     })
     .strict();
 
-  const putSelfSchema = putUserSchema.omit({ permissions: true, passwordChangeRequested: true });
+  const putSelfSchema = putUserSchema.omit({ permissions: true });
 
   api.put("/self", express.json());
   api.put("/self", getAuthMiddleware(database, ["self:modify"]));
   api.put("/self", async (req, res) => {
-    const { password } = putSelfSchema.parse(req.body);
+    const { password, passwordChangeRequested } = putSelfSchema.parse(req.body);
 
     const user = await req.user;
     if (!user) {
@@ -108,6 +108,10 @@ export function getUserAPI(database: Database): Router {
 
     if (password) {
       promises.push(user.setPassword(password));
+    }
+
+    if (typeof passwordChangeRequested === "boolean") {
+      promises.push(user.setPasswordChangeRequested(passwordChangeRequested));
     }
 
     await Promise.all(promises);

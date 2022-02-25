@@ -29,7 +29,7 @@ put:
     content:
       application/json:
         schema:
-          $ref: "#/components/schemas/password_object"
+          $ref: "#/components/schemas/access_self_user"
   responses:
     "200":
       description: OK

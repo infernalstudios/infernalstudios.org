@@ -197,11 +197,13 @@ partial_user:
     permissions:
       $ref: "#/user/properties/permissions"
 
-password_object:
+access_self_user:
   type: object
   properties:
     password:
       $ref: "#/user/properties/password"
+    passwordChangeRequested:
+      $ref: "#/user/properties/passwordChangeRequested"
 
 safe_user:
   type: object

@@ -236,3 +236,12 @@ export function zodLiterals<T extends Primitive>(
 ): ZodUnion<[ZodLiteral<T>, ZodLiteral<T>, ...ZodLiteral<T>[]]> {
   return z.union(args.map(arg => z.literal(arg)) as [ZodLiteral<T>, ZodLiteral<T>, ...ZodLiteral<T>[]]);
 }
+
+export function formatBytes(bytes: number): string {
+  return formatNumber(bytes, ["b", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"]);
+}
+
+export function formatNumber(num: number, suffixes: string[] = ["", "k", "m", "b", "t"]): string {
+  const index = Math.max(0, Math.min(suffixes.length - 1, Math.floor(num == 0 ? 0 : Math.log10(Math.abs(num)) / 3)));
+  return `${Math.floor((num * 10) / 10 ** (3 * index)) / 10}${suffixes[index]}`;
+}

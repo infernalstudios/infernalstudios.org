@@ -5,6 +5,7 @@ import { coloredLog, LoggerLevel } from "logerian";
 import minimist from "minimist";
 import path from "path";
 import { main } from "./entrypoints/main";
+import { setup } from "./entrypoints/setup";
 import { loadEnv } from "./util/Util";
 
 function handleArgs(rawArgv: string[]) {
@@ -93,6 +94,7 @@ function handleArgs(rawArgv: string[]) {
             "\n" +
             "Commands:\n" +
             chalk`\t{bold.cyan start} - Starts the server\n` +
+            chalk`\t{bold.cyan setup} <database url> - Setups the database\n` +
             chalk`\t{bold.cyan test} - Runs tests\n` +
             chalk`\t{bold.cyan help} - Prints this help message\n` +
             chalk`\t{bold.cyan help} [command|option] - Prints the help message for a specified command or option\n`
@@ -170,11 +172,48 @@ function handleArgs(rawArgv: string[]) {
               );
             }
             break;
+          case "setup":
+            console.log(
+              (
+                "\n" +
+                "Sets up the database.\n" +
+                "\n" +
+                "Usage:\n" +
+                chalk`\t{bold.yellow node} {bold.cyan ${process.argv[1]}} setup <database url> [options]\n` +
+                "\n" +
+                "Options:\n" +
+                chalk`\t{bold.cyan --help} - Prints this help message\n`
+              )
+                .split("\n")
+                .map(line => `${coloredLog(LoggerLevel.INFO)}${line}`)
+                .join("\n")
+            );
+            break;
         }
       }
 
       if (failed) process.exit(1);
       return;
+    },
+    setup: async () => {
+      if (argv.help) {
+        handleArgs(["help", "setup"]);
+        process.exit(0);
+      }
+
+      if (argv._.length <= 1) {
+        console.error(`${coloredLog(LoggerLevel.FATAL)} No database url specified.`);
+        handleArgs(["help", "setup"]);
+        process.exit(1);
+      }
+
+      if (!argv._[1].startsWith("postgres://")) {
+        console.error(`${coloredLog(LoggerLevel.FATAL)} Invalid database url.`);
+        handleArgs(["help", "setup"]);
+        process.exit(1);
+      }
+
+      setup(argv._[1]);
     },
   };
 

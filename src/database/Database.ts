@@ -51,7 +51,16 @@ export class Database {
       log: createKnexLogger(this.options.logger),
     });
 
-    await this.setup();
+    try {
+      await this.mods.getAllJSON();
+      await this.redirects.getAllJSON();
+      await this.tokens.getAllJSON();
+      await this.users.getAllJSON();
+    } catch (err) {
+      this.logger.error(err);
+      this.logger.fatal("Database failed, did you setup the database correctly?");
+    }
+
     if ((await this.users.getAll()).length === 0) {
       this.logger.warn("No users found in database");
     }
@@ -65,7 +74,7 @@ export class Database {
     await this.sql.destroy();
   }
 
-  private async setup(): Promise<void> {
+  public async setup(): Promise<void> {
     this.logger.debug(chalk`Setting up table {green 'mods'}...`);
     const modsPromise = this.setupModsTable().then(() => this.logger.debug(chalk`Table {green 'mods'} setup`));
     const versionsPromise = modsPromise.then(async () => {

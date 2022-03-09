@@ -67,7 +67,9 @@ export function getApp(database: Database, logger: Logger): Express {
   app.use(
     helmet({
       contentSecurityPolicy: {
-        useDefaults: true,
+        directives: {
+          "img-src": ["*"],
+        },
       },
       crossOriginEmbedderPolicy: true,
       crossOriginOpenerPolicy: {

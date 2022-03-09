@@ -3,10 +3,11 @@ import fs from "fs-extra";
 import http from "http";
 import { coloredIdentifier, coloredLog, getLoggerLevelName, Logger, LoggerLevel } from "logerian";
 import { AddressInfo } from "net";
+import os from "os";
 import path from "path";
 import { getApp } from "../app";
 import { Database } from "../database/Database";
-import { fileVisible } from "../util/Util";
+import { fileVisible, formatBytes } from "../util/Util";
 
 export async function main() {
   const logfile = path.join(__dirname, `../../log/${new Date().toISOString()}.txt`);
@@ -37,6 +38,14 @@ export async function main() {
       },
     ],
   });
+
+  if (typeof process.env.NODE_APP_INSTANCE !== "undefined") {
+    logger.info(chalk`Instance\t{yellow ${process.env.NODE_APP_INSTANCE}}`);
+  }
+  logger.info(chalk`NodeJS\t{yellow ${process.version}}`);
+  logger.info(chalk`OS\t{yellow ${process.platform} ${process.arch}}`);
+  logger.info(chalk`CPUs\t{yellow ${os.cpus().length}}`);
+  logger.info(chalk`Memory\t{yellow ${formatBytes(os.totalmem())}}`);
 
   const database = new Database({ connectionString: process.env.DATABASE_URL as string, logger: mainLogger });
 
@@ -88,7 +97,7 @@ export async function main() {
 
   for (const signal of ["SIGABRT", "SIGHUP", "SIGINT", "SIGQUIT", "SIGTERM", "SIGUSR1", "SIGUSR2", "SIGBREAK"]) {
     process.on(signal, () => {
-      if (signal === "SIGINT") {
+      if (signal === "SIGINT" && process.stdout.isTTY) {
         // We clear the line to get rid of nasty ^C characters.
         process.stdout.clearLine(0);
         process.stdout.cursorTo(0);
@@ -97,6 +106,12 @@ export async function main() {
       process.exit();
     });
   }
+
+  process.on("uncaughtException", err => {
+    logger.fatal(chalk`An uncaught exception occurred: {red ${err.message}}`);
+    err.stack?.split("\n").forEach((line, index) => index && logger.fatal(line)); // Skips index == 0
+    process.exit(1);
+  });
 
   process.on("exit", code => {
     logger.info(chalk`Exiting with code {yellow ${code}}`);
@@ -110,7 +125,7 @@ export async function main() {
       });
     server.close(err => {
       if (err) {
-        logger.error(err);
+        logger.error("Server emitted error when closing:", err);
       }
       logger.info("Server closed.");
       server.unref();

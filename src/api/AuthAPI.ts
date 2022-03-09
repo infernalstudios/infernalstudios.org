@@ -1,3 +1,4 @@
+// Copyright (c) 2022 Infernal Studios, All Rights Reserved unless otherwise explicitly stated.
 import express, { Router } from "express";
 import { z } from "zod";
 import { Database } from "../database/Database";

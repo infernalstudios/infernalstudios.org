@@ -1,3 +1,4 @@
+// Copyright (c) 2022 Infernal Studios, All Rights Reserved unless otherwise explicitly stated.
 import express, { Router } from "express";
 import cleanVersion from "semver/functions/clean";
 import gtVersion from "semver/functions/gt";

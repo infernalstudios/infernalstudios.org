@@ -1,3 +1,4 @@
+// Copyright (c) 2022 Infernal Studios, All Rights Reserved unless otherwise explicitly stated.
 import { pbkdf2, randomBytes } from "crypto";
 import { parse as envparse } from "dotenv";
 import { NextFunction, Request, Response } from "express";

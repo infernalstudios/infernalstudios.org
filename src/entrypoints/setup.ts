@@ -1,3 +1,4 @@
+// Copyright (c) 2022 Infernal Studios, All Rights Reserved unless otherwise explicitly stated.
 import { coloredLog, Logger, LoggerLevel } from "logerian";
 import { Database } from "../database/Database";
 

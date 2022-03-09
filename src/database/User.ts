@@ -1,3 +1,4 @@
+// Copyright (c) 2022 Infernal Studios, All Rights Reserved unless otherwise explicitly stated.
 import { hashPassword } from "../util/Util";
 import { Database } from "./Database";
 import { Token } from "./Token";

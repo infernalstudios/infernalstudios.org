@@ -1,3 +1,4 @@
+// Copyright (c) 2022 Infernal Studios, All Rights Reserved unless otherwise explicitly stated.
 import chalk from "chalk";
 import knex, { Knex } from "knex";
 import { coloredIdentifier, Logger } from "logerian";

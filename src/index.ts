@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Infernal Studios, All Rights Reserved unless otherwise explicitly stated.
+// Copyright (c) 2022 Infernal Studios, All Rights Reserved unless otherwise explicitly stated.
 import chalk from "chalk";
 import { readFile } from "fs-extra";
 import { coloredLog, LoggerLevel } from "logerian";

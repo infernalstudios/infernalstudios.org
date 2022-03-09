@@ -15,7 +15,7 @@ export async function setup(connectionString: string) {
 
   const database = new Database({ connectionString, logger });
 
-  await database.connect();
+  await database.connect(false);
   await database.setup();
   await database.close();
 }

@@ -44,7 +44,7 @@ export class Database {
     });
   }
 
-  public async connect(): Promise<void> {
+  public async connect(test = true): Promise<void> {
     this.sql = knex({
       client: "pg",
       connection: this.options.connectionString,
@@ -52,22 +52,24 @@ export class Database {
       log: createKnexLogger(this.options.logger),
     });
 
-    try {
-      await this.mods.getAllJSON();
-      await this.redirects.getAllJSON();
-      await this.tokens.getAllJSON();
-      await this.users.getAllJSON();
-    } catch (err) {
-      this.logger.error(err);
-      this.logger.fatal("Database failed, did you setup the database correctly?");
-    }
+    if (test) {
+      try {
+        await this.mods.getAllJSON();
+        await this.redirects.getAllJSON();
+        await this.tokens.getAllJSON();
+        await this.users.getAllJSON();
 
-    if ((await this.users.getAll()).length === 0) {
-      this.logger.warn("No users found in database");
+        if ((await this.users.getAll()).length === 0) {
+          this.logger.warn("No users found in database");
+        }
+        this.intervals.push(
+          setInterval(() => this.tokens.clearExpired(), 1000 * 60) // Clear expired tokens every minute
+        );
+      } catch (err) {
+        this.logger.error(err);
+        this.logger.fatal("Database failed, did you setup the database correctly?");
+      }
     }
-    this.intervals.push(
-      setInterval(() => this.tokens.clearExpired(), 1000 * 60) // Clear expired tokens every minute
-    );
   }
 
   public async close(): Promise<void> {

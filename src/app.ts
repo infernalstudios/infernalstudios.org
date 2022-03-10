@@ -70,6 +70,7 @@ export function getApp(database: Database, logger: Logger): Express {
       contentSecurityPolicy: {
         directives: {
           "img-src": ["*"],
+          "script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
         },
       },
       crossOriginEmbedderPolicy: true,

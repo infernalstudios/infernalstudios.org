@@ -1,3 +1,21 @@
+get:
+  summary: Get Mods
+  description: |
+    Returns an array of all mods.
+  responses:
+    "200":
+      description: OK
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/mod"
+    "419":
+      $ref: "#/components/responses/too_many_requests"
+    "500":
+      $ref: "#/components/responses/internal_server_error"
+
 post:
   summary: Create Mod
   description: |

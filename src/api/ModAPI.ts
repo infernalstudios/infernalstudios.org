@@ -10,6 +10,13 @@ import { getAuthMiddleware, zodLiterals } from "../util/Util";
 export function getModAPI(database: Database): Router {
   const api = Router();
 
+  api.get("/", async (_req, res) => {
+    const mods = await database.mods.getAllJSON();
+    res.status(200);
+    res.json(mods);
+    res.end();
+  });
+
   api.get("/:id", async (req, res) => {
     const mod = await database.mods.get(req.params.id);
     if (!mod) {

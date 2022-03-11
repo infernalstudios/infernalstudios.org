@@ -1,6 +1,6 @@
 name: CI/CD
 
-on: [ push, pull_request ]
+on: [push, pull_request]
 
 jobs:
   build:
@@ -12,8 +12,8 @@ jobs:
       - name: Use Node.js v16
         uses: actions/setup-node@v2
         with:
-          node-version: '16.x'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: "16.x"
+          registry-url: "https://registry.npmjs.org"
 
       - name: Get Yarn Cache Directory Path
         id: yarn-cache-dir-path
@@ -43,8 +43,8 @@ jobs:
       - name: Use Node.js v16
         uses: actions/setup-node@v2
         with:
-          node-version: '16.x'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: "16.x"
+          registry-url: "https://registry.npmjs.org"
 
       - name: Get Yarn Cache Directory Path
         id: yarn-cache-dir-path
@@ -74,8 +74,8 @@ jobs:
       - name: Use Node.js v16
         uses: actions/setup-node@v2
         with:
-          node-version: '16.x'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: "16.x"
+          registry-url: "https://registry.npmjs.org"
 
       - name: Get Yarn Cache Directory Path
         id: yarn-cache-dir-path
@@ -129,12 +129,12 @@ jobs:
     permissions:
       contents: write
     if: success() && github.event_name == 'push' && github.ref == 'refs/heads/stable'
-    needs: [ build, format, lint ]
+    needs: [build, format, lint]
     steps:
       - name: Use NodeJS v16
         uses: actions/setup-node@v2
         with:
-          node-version: '16'
+          node-version: "16"
       - name: Generate and publish documentation
         env:
           DIRECTORY: "./docs"
@@ -158,7 +158,7 @@ jobs:
           git branch -m docs
           git commit --verbose -m "
           $GITHUB_SHA
-          
+
           This is an automated commit by a GitHub workflow.
           It contains generated documentation from the main branch of this repository.
           Action: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
@@ -167,3 +167,24 @@ jobs:
           cd ~
           rm -rf "$gitdir"
           rm -rf "$moddir"
+
+  deploy:
+    runs-on: ubuntu-latest
+    if: success() && github.event_name == 'push' && github.ref == 'refs/heads/stable'
+    needs: [build, format, lint]
+    steps:
+      - name: Get temporary file
+        id: mktemp
+        run: echo "::set-output name=tempfile::`mktemp`"
+      - name: Write SSH key to temporary file
+        run: echo "${{ secrets.SSH_KEY }}" > ${{ steps.mktemp.outputs.tempfile }}
+      - name: Deploy
+        run: |
+          ssh \
+          -l ${{ secrets.SSH_USER }} \
+          -i ${{ steps.mktemp.outputs.tempfile }} \
+          -o "StrictHostKeyChecking=accept-new" \
+          ${{ secrets.SSH_HOST }} \
+          "
+            ${{ secrets.SSH_COMMAND }}
+          "

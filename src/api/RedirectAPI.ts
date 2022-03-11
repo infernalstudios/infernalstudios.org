@@ -25,7 +25,16 @@ export function getRedirectAPI(database: Database): Router {
   api.post("/", express.json());
   api.post("/", getAuthMiddleware(database, ["redirect:create"]));
   api.post("/", async (req, res) => {
-    const { id, name, path, url } = postRedirectSchema.parse(req.body);
+    const body = postRedirectSchema.parse(req.body);
+    const { id, name, url } = body;
+    let { path } = body;
+
+    if (path[0] === "/") {
+      path = path.slice(1, path.length);
+    }
+    if (path[path.length - 1] === "/") {
+      path = path.slice(0, -1);
+    }
 
     let redirect = await database.redirects.get(id);
     if (typeof redirect !== "undefined") {
@@ -63,7 +72,10 @@ export function getRedirectAPI(database: Database): Router {
   api.put("/:id", getAuthMiddleware(database, ["redirect:modify"]));
   api.put("/:id", async (req, res) => {
     const promises: Promise<unknown>[] = [];
-    const { name, path, url } = putRedirectSchema.parse(req.body);
+    const body = putRedirectSchema.parse(req.body);
+    const { name, url } = body;
+    let { path } = body;
+
     if (!name && !path && !url) {
       res.status(400);
       res.json({
@@ -83,6 +95,13 @@ export function getRedirectAPI(database: Database): Router {
     }
 
     if (path) {
+      if (path[0] === "/") {
+        path = path.slice(1, path.length);
+      }
+      if (path[path.length - 1] === "/") {
+        path = path.slice(0, -1);
+      }
+
       const checkAgainst = await database.redirects.getByPath(path);
       if (typeof checkAgainst !== "undefined" && redirect.getId() !== checkAgainst.getId()) {
         res.status(400);

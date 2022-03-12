@@ -135,38 +135,110 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: "16"
-      - name: Generate and publish documentation
+
+      - name: Setup
+        id: setup
+        run: |
+          echo "::group::Generating temporary directories..."
+          gitdir=`mktemp -d`
+          moddir=`mktemp -d`
+          docsdir=`mktemp -d`
+          echo "::endgroup::"
+          echo "::group::Cloning repository"
+          echo "::debug::Cloning repository to $gitdir"
+          git clone "https://github.com/$GITHUB_REPOSITORY.git" "$gitdir" --depth=1 --progress --branch=stable --single-branch --verbose
+          echo "::debug::Cloning repository to $docsdir"
+          git clone "https://github.com/$GITHUB_REPOSITORY.git" "$docsdir" --depth=1 --progress --branch=docs --single-branch --verbose
+          echo "::endgroup::"
+          echo "::group::Setting up cloned repositories"
+          cd "$gitdir"
+          git config advice.detachedHead false
+          if ! git checkout --force "$GITHUB_SHA"; then
+            echo "::error::Failed to checkout $GITHUB_SHA"
+            exit 1
+          fi
+          cd "$docsdir"
+          if ! git checkout --force "origin/docs"; then
+            echo "::error::Failed to checkout origin/docs"
+            exit 1
+          fi
+          rm -rfv .git README
+          echo "::endgroup::"
+          echo ""
+          echo "::set-output name=gitdir::$gitdir"
+          echo "::set-output name=moddir::$moddir"
+          echo "::set-output name=docsdir::$docsdir"
+
+      - name: Generate
         env:
           DIRECTORY: "./docs"
         run: |
-          gitdir=`mktemp -d`
-          moddir=`mktemp -d`
-          git clone "https://github.com/$GITHUB_REPOSITORY.git" "$gitdir" --depth=1 --progress --single-branch --verbose
+          gitdir="${{ steps.setup.outputs.gitdir }}"
+          moddir="${{ steps.setup.outputs.moddir }}"
+          docsdir="${{ steps.setup.outputs.docsdir }}"
+
           cd "$gitdir"
-          git config advice.detachedHead false
-          git checkout --force "$GITHUB_SHA"
+          echo "::group::Installing dependencies"
           yarn
+          echo "::endgroup::"
+          echo "::group::Generating documentation"
           yarn docs
+          echo "::endgroup::"
+          echo "::group::Copying documentation to temporary directory"
           mv -vf "$gitdir/$DIRECTORY"/* $moddir
-          cd "$moddir"
-          git init
-          git remote add origin "https://$GITHUB_ACTOR:${{ secrets.GITHUB_TOKEN }}@github.com/$GITHUB_REPOSITORY.git"
-          echo "This is an automated branch. Please do not commit to or change any files in it." >> README
-          git add . -v
-          git config --local user.name "github-actions[bot]"
-          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git branch -m docs
-          git commit --verbose -m "
-          $GITHUB_SHA
+          echo "::endgroup::"
+
+      - name: Publish
+        run: |
+          gitdir="${{ steps.setup.outputs.gitdir }}"
+          moddir="${{ steps.setup.outputs.moddir }}"
+          docsdir="${{ steps.setup.outputs.docsdir }}"
+          gitmessage="$GITHUB_SHA
 
           This is an automated commit by a GitHub workflow.
           It contains generated documentation from the main branch of this repository.
-          Action: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
-          "
-          git push origin docs --force --verbose
+          Action: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+
+          moddirhash=`find "$moddir" -type f | xargs sha512sum | cut -d ' ' -f 1`
+          docsdirhash=`find "$docsdir" -type f | xargs sha512sum | cut -d ' ' -f 1`
+          if [[ "$moddirhash" != "$docsdirhash" ]]; then
+            echo "Documentation changed, publishing..."
+            cd "$moddir"
+            echo "::group::Preparing commit"
+            git init
+            git remote add origin "https://$GITHUB_ACTOR:${{ secrets.GITHUB_TOKEN }}@github.com/$GITHUB_REPOSITORY.git"
+            echo "This is an automated branch. Please do not commit to or change any files in it." >> README
+            git add . -v
+            git config --local user.name "github-actions[bot]"
+            git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git branch -m docs
+            echo "::endgroup::"
+            echo "::group::Committing changes"
+            git commit --verbose -m "$gitmessage"
+            echo "::endgroup::"
+            echo "::group::Pushing changes"
+            git push origin docs --force --verbose
+            echo "::endgroup::"
+          else
+            echo "Documentation hasn't changed, skipping publish."
+          fi
+
+      - name: Cleanup
+        run: |
+          gitdir="${{ steps.setup.outputs.gitdir }}"
+          moddir="${{ steps.setup.outputs.moddir }}"
+          docsdir="${{ steps.setup.outputs.docsdir }}"
+
           cd ~
-          rm -rf "$gitdir"
-          rm -rf "$moddir"
+          echo "::group::Removing $gitdir"
+          rm -rfv "$gitdir"
+          echo "::endgroup::"
+          echo "::group::Removing $moddir"
+          rm -rfv "$moddir"
+          echo "::endgroup::"
+          echo "::group::Removing $docsdir"
+          rm -rfv "$docsdir"
+          echo "::endgroup::"
 
   deploy:
     runs-on: ubuntu-latest

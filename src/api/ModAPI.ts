@@ -147,7 +147,7 @@ export function getModAPI(database: Database): Router {
       url: z.string().max(255),
       minecraft: z.string().max(255),
       recommended: z.boolean(),
-      changelog: z.string().max(511),
+      changelog: z.string().max(4095),
       loader: zodLiterals("forge", "fabric", "rift", "liteloader", "quilt"),
       dependencies: z.array(
         z

@@ -286,7 +286,10 @@ export function getModAPI(database: Database): Router {
       if (typeof response[minecraft] === "undefined") response[minecraft] = {};
       (response[minecraft] as Record<string, string>)[id] = version.getChangelog();
 
-      if (typeof response.promos[`${minecraft}-latest`] === "undefined") {
+      if (
+        typeof response.promos[`${minecraft}-latest`] === "undefined" ||
+        gtVersion(id, response.promos[`${minecraft}-latest`])
+      ) {
         response.promos[`${minecraft}-latest`] = id;
       }
 

@@ -69,6 +69,7 @@ export function getApp(database: Database, logger: Logger): Express {
     helmet({
       contentSecurityPolicy: {
         directives: {
+          "default-src": ["*"],
           "img-src": ["*"],
           "script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
         },

@@ -1,0 +1,193 @@
+<!-- Copyright (c) 2022 Infernal Studios, All Rights Reserved unless otherwise explicitly stated. -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Infernal Studios | Admin Page</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/spectre.css" />
+    <script>
+      window.addEventListener("DOMContentLoaded", async () => {
+        const yearElements = document.getElementsByClassName("year");
+        for (let i = 0; i < yearElements.length; i++) {
+          yearElements[i].innerText = new Date().getFullYear();
+        }
+
+        /** @type {HTMLDivElement} */
+        const errorTextElement = document.querySelector("main > div > div#error");
+        /** @type {HTMLElement} */
+        const mainElement = document.querySelector("main");
+        /** @type {HTMLDivElement} */
+        const templatesContainer = document.querySelector("#templates");
+        /** @type {{ [templateName: string]: HTMLElement[]; }} */
+        const templates = {};
+
+        for (const template of templatesContainer.children) {
+          templates[template.id] = [...template.children];
+        }
+
+        const loggedInTextElement = document.querySelector("#logged-in-text");
+        loggedInTextElement.innerHTML = "Currently not logged in";
+
+        const logoutButton = document.querySelector("#logout");
+        logoutButton.addEventListener("click", async e => {
+          e.preventDefault();
+          await fetch("/api/auth/token/" + getCookie("token"), {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + getCookie("token"),
+            },
+          }).catch(e => console.error(e));
+          document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+          document.location = "/login";
+          return;
+        });
+
+        /**
+         * @param {string} templateName
+         */
+        function setTemplate(template) {
+          if (template in templates) {
+            mainElement.innerHTML = "";
+            mainElement.appendChild(errorTextElement.parentElement);
+            for (const templateElement of templates[template]) {
+              mainElement.appendChild(templateElement);
+            }
+          } else {
+            throw new Error(`Unknown template: ${template}`);
+          }
+        }
+
+        /**
+         * @param {string} templateName
+         */
+        function addTemplate(template) {
+          if (template in templates) {
+            for (const templateElement of templates[template]) {
+              mainElement.appendChild(templateElement);
+            }
+          } else {
+            throw new Error(`Unknown template: ${template}`);
+          }
+        }
+
+        /**
+         * @param {string} name
+         * @returns {string}
+         */
+        function getCookie(name) {
+          const value = "; " + document.cookie;
+          const parts = value.split("; " + name + "=");
+          if (parts.length === 2) {
+            return parts.pop().split(";").shift();
+          }
+          return "";
+        }
+
+        setTemplate("check-login");
+
+        if (getCookie("token") === "") {
+          document.location = "/login";
+          return; // This probably isn't required, but it's a fail-safe
+        }
+
+        const tokenCheckResponse = await fetch("/api/auth/token", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + getCookie("token"),
+          },
+        })
+          .then(response => response.json())
+          .catch(err => {
+            console.error(err);
+          });
+
+        if (!tokenCheckResponse.valid) {
+          document.location = "/login";
+          return; // This probably isn't required, but it's a fail-safe
+        }
+
+        const user = await fetch("/api/users/self", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + getCookie("token"),
+          },
+        })
+          .then(response => response.json())
+          .catch(err => {
+            console.error(err);
+          });
+
+        loggedInTextElement.innerHTML = `Logged in as <strong>${user.id}</strong>`;
+
+        setTemplate("header");
+        // addTemplate("main");
+      });
+    </script>
+    <style>
+      main {
+        padding: 32px 64px 0 64px;
+      }
+
+      footer p {
+        margin-top: 16px;
+        margin-bottom: 16px;
+      }
+
+      .navbar {
+        padding: 8px 16px;
+        border-bottom: 0.05rem solid #dadee4;
+        background-color: #f7f8f9;
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      .w-100 {
+        width: 100%;
+      }
+    </style>
+  </head>
+
+  <body>
+    <header class="navbar pl-2 pr-2">
+      <section class="navbar-section">
+        <a href="/" class="btn btn-link">Back to Home</a>
+      </section>
+      <section class="navbar-center">
+        <img
+          alt="Infernal Studios Logo"
+          src="/img/infernal-studios-logo.png"
+          class="m-0"
+          style="max-height: calc(8px + 0.8rem)"
+        />
+      </section>
+      <section class="navbar-section">
+        <span id="logged-in-text" class="btn btn-link text-dark c-auto">Currently logged in as</span>
+        <button id="logout" class="btn btn-link">Logout</button>
+      </section>
+    </header>
+
+    <main>
+      <noscript>
+        <div class="toast toast-error" align="center">This page requires JavaScript enabled to work!</div>
+      </noscript>
+      <div align="center">
+        <div class="toast toast-error hidden" align="center" id="error"></div>
+      </div>
+    </main>
+
+    <!-- This div is hidden and should never be shown. -->
+    <div id="templates" class="hidden">
+      <div id="check-login">
+        <h2 align="center">Checking your login status, please wait.</h2>
+        <div class="loading loading-lg" align="center"></div>
+      </div>
+
+      <div id="header"></div>
+    </div>
+  </body>
+</html>

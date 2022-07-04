@@ -1,0 +1,292 @@
+<!-- Copyright (c) 2022 Infernal Studios, All Rights Reserved unless otherwise explicitly stated. -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Infernal Studios | Login</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/spectre.css" />
+    <script>
+      window.addEventListener("DOMContentLoaded", async () => {
+        const yearElements = document.getElementsByClassName("year");
+        for (let i = 0; i < yearElements.length; i++) {
+          yearElements[i].innerText = new Date().getFullYear();
+        }
+
+        /** @type {HTMLDivElement} */
+        const errorTextElement = document.querySelector("main > div > div#error");
+        /** @type {HTMLElement} */
+        const mainElement = document.querySelector("main");
+        /** @type {HTMLDivElement} */
+        const templatesContainer = document.querySelector("#templates");
+        /** @type {{ [templateName: string]: HTMLElement[]; }} */
+        const templates = {};
+
+        for (const template of templatesContainer.children) {
+          templates[template.id] = [...template.children];
+        }
+
+        /**
+         * @param {string} templateName
+         */
+        function setTemplate(template) {
+          if (template in templates) {
+            mainElement.innerHTML = "";
+            mainElement.appendChild(errorTextElement.parentElement);
+            for (const templateElement of templates[template]) {
+              mainElement.appendChild(templateElement);
+            }
+          } else {
+            throw new Error(`Unknown template: ${template}`);
+          }
+        }
+
+        /**
+         * @param {string} templateName
+         */
+        function addTemplate(template) {
+          if (template in templates) {
+            for (const templateElement of templates[template]) {
+              mainElement.appendChild(templateElement);
+            }
+          } else {
+            throw new Error(`Unknown template: ${template}`);
+          }
+        }
+        /**
+         * @param {string?} errorText
+         */
+        function setError(errorText = "", style = "") {
+          if (typeof errorText !== "string" || errorText.trim().length === 0) {
+            errorTextElement.innerText = "";
+            errorTextElement.classList.add("hidden");
+          } else {
+            errorTextElement.innerText = errorText;
+            errorTextElement.style = style;
+            errorTextElement.classList.remove("hidden");
+            errorTextElement.scrollTo({ behavior: "smooth" });
+          }
+        }
+
+        /**
+         * @param {string} name
+         * @returns {string}
+         */
+        function getCookie(name) {
+          const value = "; " + document.cookie;
+          const parts = value.split("; " + name + "=");
+          if (parts.length === 2) {
+            return parts.pop().split(";").shift();
+          }
+          return "";
+        }
+
+        /**
+         * @param {string} name
+         * @param {string} value
+         * @param {object} options
+         * @param {"none" | "lax" | "strict"} options.sameSite
+         * @param {boolean} options.secure
+         * @param {number} options.maxAge
+         */
+        function setCookie(
+          name,
+          value,
+          { sameSite, secure, maxAge } = { sameSite: "none", secure: false, maxAge: 31536000 }
+        ) {
+          document.cookie = `${name}=${value}; samesite=${sameSite}; secure=${secure}; max-age=${maxAge}`;
+        }
+
+        async function promptLogin() {
+          setTemplate("login");
+          /** @type {HTMLInputElement} */
+          const usernameField = mainElement.querySelector("#username");
+          /** @type {HTMLInputElement} */
+          const passwordField = mainElement.querySelector("#password");
+          /** @type {HTMLButtonElement} */
+          const loginButton = mainElement.querySelector("#login");
+
+          setError("");
+          usernameField.disabled = false;
+          passwordField.disabled = false;
+          loginButton.disabled = false;
+          loginButton.classList.remove("loading");
+
+          if (usernameField.value.trim().length === 0) {
+            usernameField.focus({ preventScroll: false });
+          } else {
+            passwordField.focus({ preventScroll: false });
+          }
+
+          loginButton.addEventListener("click", async function onClick(e) {
+            e.preventDefault();
+
+            usernameField.disabled = true;
+            passwordField.disabled = true;
+            loginButton.removeEventListener("click", onClick);
+            loginButton.disabled = true;
+            loginButton.classList.add("loading");
+
+            const { json, status } = await fetch("/api/auth/login", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                username: usernameField.value.trim(),
+                password: passwordField.value,
+              }),
+            })
+              .then(async response => ({ json: await response.json(), status: response.status }))
+              .catch(err => {
+                console.error(err);
+
+                setError("An error occurred: " + err.message, "width: 65vw;");
+
+                usernameField.disabled = false;
+                passwordField.disabled = false;
+                loginButton.disabled = false;
+                loginButton.classList.remove("loading");
+                loginButton.addEventListener("click", onClick);
+              });
+
+            if (status === 200) {
+              setCookie("token", json.id, {
+                sameSite: "strict",
+                secure: true,
+                maxAge: Math.floor(json.expiry - Date.now() / 1000 - 30),
+              });
+              setTemplate("check-login");
+              attemptLoginFromCookie();
+            } else {
+              setError("An error occurred: " + json.errors[0], "width: 65vw;");
+
+              function removeError() {
+                setError("");
+                for (const field of [usernameField, passwordField]) {
+                  field.classList.remove("is-error");
+                  field.removeEventListener("input", removeError);
+                }
+              }
+
+              usernameField.disabled = false;
+              usernameField.classList.add("is-error");
+              usernameField.addEventListener("input", removeError);
+              passwordField.disabled = false;
+              passwordField.classList.add("is-error");
+              passwordField.addEventListener("input", removeError);
+              loginButton.disabled = false;
+              loginButton.classList.remove("loading");
+              loginButton.addEventListener("click", onClick);
+            }
+          });
+        }
+
+        async function attemptLoginFromCookie() {
+          const response = await fetch("/api/auth/token", {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + getCookie("token"),
+            },
+          })
+            .then(response => response.json())
+            .catch(err => {
+              console.error(err);
+              promptLogin();
+              setError("An error occurred while trying to authenticate you. Please try again.");
+            });
+
+          if (response.valid) {
+            document.location = "/admin";
+            return; // This probably isn't required, but it's a fail-safe
+          } else {
+            setCookie("token", "");
+            promptLogin();
+          }
+        }
+
+        setTemplate("check-login");
+
+        if (getCookie("token") !== "") {
+          attemptLoginFromCookie();
+        } else {
+          promptLogin();
+        }
+      });
+    </script>
+    <style>
+      main {
+        padding: 32px 64px 0 64px;
+      }
+
+      footer p {
+        margin-top: 16px;
+        margin-bottom: 16px;
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      .w-100 {
+        width: 100%;
+      }
+    </style>
+  </head>
+
+  <body>
+    <header>
+      <a href="/" title="Back to Home">
+        <img alt="Infernal Studios Logo" src="/img/infernal-studios-logo.png" style="margin: 0px; width: 30vw" />
+      </a>
+
+      <hr />
+    </header>
+
+    <main>
+      <noscript>
+        <div class="toast toast-error" align="center">This page requires JavaScript enabled to work!</div>
+      </noscript>
+      <div align="center">
+        <div class="toast toast-error hidden" align="center" id="error"></div>
+      </div>
+    </main>
+
+    <!-- This div is hidden and should never be shown. -->
+    <div id="templates" class="hidden">
+      <div id="check-login">
+        <h2 align="center">Checking your login status, please wait.</h2>
+        <div class="loading loading-lg" align="center"></div>
+      </div>
+
+      <div id="login">
+        <div class="form-horizontal form-group container" style="width: 65vw">
+          <form class="container col-5" onsubmit="return false;">
+            <label class="form-label w-100" for="username">Username</label>
+            <input class="form-input input-lg" type="text" id="username" placeholder="Username" />
+            <label class="form-label w-100" for="password">Password</label>
+            <input class="form-input input-lg" type="password" id="password" placeholder="Password" />
+            <button class="btn btn-primary btn-lg mt-2 w-100" type="submit" id="login">Login</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <p align="center">
+        To contact the site's administrator, e-mail them at
+        <strong>swan [at] infernalstudios [dot] org</strong>
+      </p>
+      <p align="center">
+        Infernal Studios is not associated with or endorsed by Minecraft, Mojang Studios, or Microsoft Corporation.
+      </p>
+      <p align="center">
+        Infernal Studios, All rights reserved. &copy; <span class="year"></span>
+        &bull;
+        <a href="/privacy">Privacy Policy</a>
+        &bull;
+        <a href="/source">Source Code</a>
+      </p>
+    </footer>
+  </body>
+</html>

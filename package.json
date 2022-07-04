@@ -23,10 +23,12 @@
   ],
   "main": "dist/index.js",
   "scripts": {
+    "apply-patches": "node scripts/apply-patches.js",
     "build": "yarn build:only",
     "build:only": "tsc",
     "build:noemit": "yarn build --noEmit",
     "build:watch": "tsc -w",
+    "copy-spectre-css": "node scripts/copy-spectre-css.js",
     "predocs": "node scripts/clearDirectory.js docs",
     "docs": "redoc-cli bundle spec/api.yml --dereferenced --ext yml --lint --output docs/index.html --title \"Infernal Studios API\"",
     "postdocs": "node scripts/postdocs.js docs/index.html",
@@ -37,7 +39,7 @@
     "lint": "eslint src",
     "prebuild": "yarn format:check && yarn lint",
     "prepare": "husky install",
-    "postinstall": "node scripts/apply-patches.js",
+    "postinstall": "yarn apply-patches && yarn copy-spectre-css",
     "start": "node . start"
   },
   "dependencies": {
@@ -53,6 +55,7 @@
     "pg": "^8.7.3",
     "rate-limiter-flexible": "^2.3.7",
     "semver": "^7.3.7",
+    "spectre.css": "^0.5.9",
     "zod": "^3.17.3"
   },
   "devDependencies": {

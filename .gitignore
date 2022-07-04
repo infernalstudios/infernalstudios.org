@@ -5,3 +5,6 @@ data.json
 .env
 .vscode
 docs
+/public/css/spectre.min.css
+/public/css/spectre-exp.min.css
+/public/css/spectre-icons.min.css

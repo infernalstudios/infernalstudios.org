@@ -1,3 +1,4 @@
+// Copyright (c) 2022 Infernal Studios, All Rights Reserved unless otherwise explicitly stated.
 const previousDir = process.cwd();
 const argv = process.argv.slice(2);
 

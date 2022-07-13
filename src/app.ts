@@ -2,6 +2,7 @@
 import chalk from "chalk";
 import cors from "cors";
 import express, { Express, NextFunction, Request, Response } from "express";
+import expressStaticGzip from "express-static-gzip";
 import helmet from "helmet";
 import { coloredIdentifier, Logger, LoggerLevel } from "logerian";
 import path from "path";
@@ -94,7 +95,9 @@ export function getApp(database: Database, logger: Logger): Express {
     })
   );
 
-  app.use(express.static(path.join(__dirname, "../public"), { extensions: ["html"] }));
+  app.use(
+    expressStaticGzip(path.join(__dirname, "../public"), { enableBrotli: true, serveStatic: { extensions: ["html"] } })
+  );
 
   app.use("/api", getAPI(database));
   app.use("/api", (_req, res) => {

@@ -1,3 +1,4 @@
+// Copyright (c) 2022 Infernal Studios, All Rights Reserved unless otherwise explicitly stated.
 const fs = require("fs");
 const path = require("path");
 const child_process = require("child_process");

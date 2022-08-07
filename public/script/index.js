@@ -27,6 +27,11 @@ const mods = [
     urlIdentifier: "nebs",
     logo: "/img/nekos-enchanted-books-logo.webp",
   },
+  {
+    name: "Celestial Config",
+    urlIdentifier: "celestialconfig",
+    logo: "/img/celestial-config-logo.webp",
+  },
 ];
 
 for (let i = 0; i < mods.length; i++) {

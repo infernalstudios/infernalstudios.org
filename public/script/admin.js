@@ -467,7 +467,11 @@ window.addEventListener("DOMContentLoaded", async () => {
           .replace(/\{\{name\}\}/g, mod.name)
           .replace(/\{\{url\}\}/g, mod.url);
         modList.innerHTML += template;
-        const modTile = modList.lastElementChild;
+      }
+
+      const modTiles = [...modList.querySelectorAll(".tile-mod[data-modid]")];
+      for (const modTile of modTiles) {
+        const mod = mods.find(mod => mod.id === modTile.attributes["data-modid"].value);
         modTile.addEventListener("click", async e => {
           e.preventDefault();
           setModInfo(mod);

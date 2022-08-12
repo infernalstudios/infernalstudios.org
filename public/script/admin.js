@@ -409,7 +409,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                 )
               ) {
                 const response = await fetch(
-                  `/api/mods/infernalexp/versions?${new URLSearchParams({
+                  `/api/mods/${mod.id}/versions?${new URLSearchParams({
                     version: version.id,
                     loader: version.loader,
                     minecraft: version.minecraft,

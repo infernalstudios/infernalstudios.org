@@ -1,6 +1,6 @@
 {
   "name": "infernalstudios.org",
-  "version": "1.1.7",
+  "version": "1.1.10",
   "private": true,
   "description": "Source code for <https://infernalstudios.org>!",
   "bugs": "https://github.com/infernalexp/infernalstudios.org/issues",
@@ -47,6 +47,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.0.1",
     "express": "^4.18.1",
+    "express-static-gzip": "^2.1.7",
     "fs-extra": "^10.1.0",
     "helmet": "^5.1.0",
     "knex": "^1.0.7",

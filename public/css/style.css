@@ -1,8 +1,4 @@
 /* Copyright (c) 2022 Infernal Studios, All Rights Reserved unless otherwise explicitly stated. */
-* {
-  font-family: "Helvetica Neue", sans-serif;
-}
-
 header {
   padding-top: 8px;
   text-align: center;
@@ -18,7 +14,7 @@ footer {
   padding-left: 16px;
   padding-right: 16px;
 }
-
+/* 
 .mods table {
   margin-left: auto;
   margin-right: auto;
@@ -27,9 +23,19 @@ footer {
 .mods h4 {
   text-align: center;
 }
+ */
 
-.mods img.mod-logo {
+#mod-container img.mod-logo {
   margin: 0px;
-  width: 26vw;
+  width: 100%;
   height: auto;
+}
+
+.breadcrumb-equal a {
+  color: inherit !important;
+}
+
+hr {
+  margin-top: 16px;
+  margin-bottom: 16px;
 }

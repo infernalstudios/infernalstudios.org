@@ -5,151 +5,8 @@
     <title>Infernal Studios | Admin Page</title>
     <link rel="stylesheet" href="/css/style.css" />
     <link rel="stylesheet" href="/css/spectre.css" />
-    <script>
-      window.addEventListener("DOMContentLoaded", async () => {
-        const yearElements = document.getElementsByClassName("year");
-        for (let i = 0; i < yearElements.length; i++) {
-          yearElements[i].innerText = new Date().getFullYear();
-        }
-
-        /** @type {HTMLDivElement} */
-        const errorTextElement = document.querySelector("main > div > div#error");
-        /** @type {HTMLElement} */
-        const mainElement = document.querySelector("main");
-        /** @type {HTMLDivElement} */
-        const templatesContainer = document.querySelector("#templates");
-        /** @type {{ [templateName: string]: HTMLElement[]; }} */
-        const templates = {};
-
-        for (const template of templatesContainer.children) {
-          templates[template.id] = [...template.children];
-        }
-
-        const loggedInTextElement = document.querySelector("#logged-in-text");
-        loggedInTextElement.innerHTML = "Currently not logged in";
-
-        const logoutButton = document.querySelector("#logout");
-        logoutButton.addEventListener("click", async e => {
-          e.preventDefault();
-          await fetch("/api/auth/token/" + getCookie("token"), {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: "Bearer " + getCookie("token"),
-            },
-          }).catch(e => console.error(e));
-          document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-          document.location = "/login";
-          return;
-        });
-
-        /**
-         * @param {string} templateName
-         */
-        function setTemplate(template) {
-          if (template in templates) {
-            mainElement.innerHTML = "";
-            mainElement.appendChild(errorTextElement.parentElement);
-            for (const templateElement of templates[template]) {
-              mainElement.appendChild(templateElement);
-            }
-          } else {
-            throw new Error(`Unknown template: ${template}`);
-          }
-        }
-
-        /**
-         * @param {string} templateName
-         */
-        function addTemplate(template) {
-          if (template in templates) {
-            for (const templateElement of templates[template]) {
-              mainElement.appendChild(templateElement);
-            }
-          } else {
-            throw new Error(`Unknown template: ${template}`);
-          }
-        }
-
-        /**
-         * @param {string} name
-         * @returns {string}
-         */
-        function getCookie(name) {
-          const value = "; " + document.cookie;
-          const parts = value.split("; " + name + "=");
-          if (parts.length === 2) {
-            return parts.pop().split(";").shift();
-          }
-          return "";
-        }
-
-        setTemplate("check-login");
-
-        if (getCookie("token") === "") {
-          document.location = "/login";
-          return; // This probably isn't required, but it's a fail-safe
-        }
-
-        const tokenCheckResponse = await fetch("/api/auth/token", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer " + getCookie("token"),
-          },
-        })
-          .then(response => response.json())
-          .catch(err => {
-            console.error(err);
-          });
-
-        if (!tokenCheckResponse.valid) {
-          document.location = "/login";
-          return; // This probably isn't required, but it's a fail-safe
-        }
-
-        const user = await fetch("/api/users/self", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer " + getCookie("token"),
-          },
-        })
-          .then(response => response.json())
-          .catch(err => {
-            console.error(err);
-          });
-
-        loggedInTextElement.innerHTML = `Logged in as <strong>${user.id}</strong>`;
-
-        setTemplate("header");
-        // addTemplate("main");
-      });
-    </script>
-    <style>
-      main {
-        padding: 32px 64px 0 64px;
-      }
-
-      footer p {
-        margin-top: 16px;
-        margin-bottom: 16px;
-      }
-
-      .navbar {
-        padding: 8px 16px;
-        border-bottom: 0.05rem solid #dadee4;
-        background-color: #f7f8f9;
-      }
-
-      .hidden {
-        display: none;
-      }
-
-      .w-100 {
-        width: 100%;
-      }
-    </style>
+    <link rel="stylesheet" href="/css/admin.css" />
+    <script src="/script/admin.js" type="text/javascript" defer></script>
   </head>
 
   <body>
@@ -160,7 +17,7 @@
       <section class="navbar-center">
         <img
           alt="Infernal Studios Logo"
-          src="/img/infernal-studios-logo.png"
+          src="/img/infernal-studios-logo.webp"
           class="m-0"
           style="max-height: calc(8px + 0.8rem)"
         />
@@ -183,11 +40,242 @@
     <!-- This div is hidden and should never be shown. -->
     <div id="templates" class="hidden">
       <div id="check-login">
-        <h2 align="center">Checking your login status, please wait.</h2>
+        <h2 align="center" style="padding-top: 32px">Checking your login status, please wait.</h2>
         <div class="loading loading-lg" align="center"></div>
       </div>
 
-      <div id="header"></div>
+      <div id="header">
+        <ul class="tab tab-block">
+          <li class="tab-item">
+            <a href="#" id="overview-tab-btn">Overview</a>
+          </li>
+          <li class="tab-item">
+            <a href="#" id="mods-tab-btn">Mods</a>
+          </li>
+        </ul>
+      </div>
+
+      <div id="overview-tab">
+        <h2 align="center">Overview</h2>
+        <div class="loading loading-lg" align="center"></div>
+      </div>
+
+      <div id="mods-tab">
+        <div class="container columns" style="height: var(--content-height)">
+          <div class="column col-4">
+            <div id="mods-list">
+              <div class="loading loading-lg" align="center"></div>
+            </div>
+          </div>
+          <div class="column col-8">
+            <div id="mod-info" style="height: 100%"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="mod-info-empty">
+        <div class="empty" style="height: inherit">
+          <p class="empty-title h5">It's lonely here...</p>
+          <p class="empty-subtitle">Select a mod on the left to manage!</p>
+        </div>
+      </div>
+
+      <div id="mod-info">
+        <div class="container p-0">
+          <div class="columns col-gapless">
+            <div class="column col-4" id="sidepanel-column" style="height: var(--content-height)">
+              <div class="panel" id="sidepanel" style="height: var(--content-height)">
+                <div class="panel-header p-2">
+                  <form class="form-horizontal pr-2 pl-2 mt-2">
+                    <div class="form-group">
+                      <div class="col-4">
+                        <span>Name</span>
+                      </div>
+                      <div class="col-8">
+                        <input class="form-input input-sm" id="mod-name" />
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <div class="col-4">
+                        <span>URL</span>
+                      </div>
+                      <div class="col-8">
+                        <input class="form-input input-sm" id="mod-url" />
+                      </div>
+                    </div>
+                    <div class="form-group btn-group">
+                      <button class="btn btn-primary btn-sm max-width-4" id="mod-meta-save">Save</button>
+                    </div>
+                  </form>
+
+                  <div class="panel-body h-100">
+                    <ul class="tab tab-block center">
+                      <li class="tab-item" style="max-width: 100%">
+                        <a class="active">Versions</a>
+                      </li>
+                    </ul>
+                    <div id="mod-versions"></div>
+                    <button class="btn btn-primary btn-sm w-100" id="add-version">Add Version</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="column" id="panel-column">
+              <div class="panel" id="modspanel">
+                <div class="panel-body">
+                  <div id="version"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="mod-tile">
+        <div class="tile tile-mod tile-centered">
+          <div class="tile-content">
+            <div class="tile-title text-bold">
+              {{name}} <span class="text-small text-normal text-gray">{{id}}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="version-tile">
+        <div class="tile tile-mod tile-centered" data-modid="{{id}}-{{loader}}-{{minecraft}}">
+          <div class="tile-content">
+            <div class="tile-title text-bold">
+              {{name}} <span class="text-small text-normal text-gray">{{id}} | {{Loader}} {{minecraft}}</span>
+            </div>
+          </div>
+
+          <div class="tile-action">
+            <div class="dropdown">
+              <a href="#" class="btn btn-link dropdown-toggle btn-lg pt-1 no-box-shadow" tabindex="0">
+                <i class="icon icon-more-vert"></i>
+              </a>
+              <ul class="menu" data-modid="{{id}}-{{loader}}-{{minecraft}}">
+                <li class="menu-item">
+                  <a href="#" class="mod-duplicate"> <i class="icon icon-copy mr-2"></i> Duplicate </a>
+                </li>
+                <li class="menu-item">
+                  <a href="#" class="mod-edit"> <i class="icon icon-edit mr-2"></i> Edit </a>
+                </li>
+                <li class="menu-item">
+                  <a href="#" class="mod-delete"> <i class="icon icon-delete mr-2"></i> Remove </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="add-version">
+        <form class="form-horizontal pr-2 pl-2 mt-2">
+          <div class="toast toast-error hidden mb-2" id="error-toast"></div>
+          <div class="form-group">
+            <div class="col-4">
+              <span>ID</span>
+            </div>
+            <div class="col-8">
+              <input class="form-input input-lg" id="version-id" />
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="col-4">
+              <span>Name</span>
+            </div>
+            <div class="col-8">
+              <input class="form-input input-lg" id="version-name" />
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="col-4">
+              <span>URL</span>
+            </div>
+            <div class="col-8">
+              <input class="form-input input-lg" id="version-url" />
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="col-4">
+              <span>Minecraft Version</span>
+            </div>
+            <div class="col-8">
+              <input class="form-input input-lg" id="version-minecraft" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-switch col-4">
+              <input type="checkbox" id="version-recommended" />
+              <i class="form-icon"></i> Recommended
+            </label>
+
+            <select class="form-select select-lg col-8" id="version-loader">
+              <option selected disabled>Choose a modloader</option>
+              <option>Forge</option>
+              <option>Fabric</option>
+              <option>Rift</option>
+              <option>Liteloader</option>
+              <option>Quilt</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <textarea id="version-changelog" rows="5" class="form-input" placeholder="Changelog"></textarea>
+          </div>
+          <div class="form-group btn-group">
+            <button class="btn btn-primary btn-sm max-width-4" id="version-create">Create Version</button>
+          </div>
+        </form>
+      </div>
+
+      <div id="version-info">
+        <form class="form-horizontal pr-2 pl-2 mt-2 informational-form">
+          <div class="form-group">
+            <div class="col-4">
+              <span>ID</span>
+            </div>
+            <div class="col-8">
+              <input class="form-input input-lg" id="version-id" readonly />
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="col-4">
+              <span>Name</span>
+            </div>
+            <div class="col-8">
+              <input class="form-input input-lg" id="version-name" readonly />
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="col-4">
+              <span>URL</span>
+            </div>
+            <div class="col-8">
+              <input class="form-input input-lg" id="version-url" readonly />
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="col-4">
+              <span>Minecraft Version</span>
+            </div>
+            <div class="col-8">
+              <input class="form-input input-lg" id="version-minecraft" readonly />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-switch col-4">
+              <input type="checkbox" id="version-recommended" disabled />
+              <i class="form-icon"></i> Recommended
+            </label>
+
+            <input class="form-input input-lg col-8" id="version-loader" readonly />
+          </div>
+          <div class="form-group">
+            <textarea id="version-changelog" rows="5" class="form-input" placeholder="Changelog" readonly></textarea>
+          </div>
+        </form>
+      </div>
     </div>
   </body>
 </html>

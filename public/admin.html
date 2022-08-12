@@ -84,7 +84,11 @@
         <div class="container p-0">
           <div class="columns col-gapless">
             <div class="column col-4" id="sidepanel-column" style="height: var(--content-height)">
-              <div class="panel" id="sidepanel" style="height: var(--content-height)">
+              <div
+                class="panel"
+                id="sidepanel"
+                style="height: var(--content-height); max-height: var(--content-height)"
+              >
                 <div class="panel-header p-2">
                   <form class="form-horizontal pr-2 pl-2 mt-2">
                     <div class="form-group">
@@ -108,14 +112,14 @@
                     </div>
                   </form>
 
-                  <div class="panel-body h-100">
+                  <div class="panel-body">
                     <ul class="tab tab-block center">
                       <li class="tab-item" style="max-width: 100%">
                         <a class="active">Versions</a>
                       </li>
                     </ul>
-                    <div id="mod-versions"></div>
                     <button class="btn btn-primary btn-sm w-100" id="add-version">Add Version</button>
+                    <div id="mod-versions" style="max-height: calc(var(--content-height) - 220px)"></div>
                   </div>
                 </div>
               </div>
@@ -150,7 +154,7 @@
           </div>
 
           <div class="tile-action">
-            <div class="dropdown">
+            <div class="dropdown dropdown-right">
               <a href="#" class="btn btn-link dropdown-toggle btn-lg pt-1 no-box-shadow" tabindex="0">
                 <i class="icon icon-more-vert"></i>
               </a>

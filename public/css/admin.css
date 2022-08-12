@@ -93,3 +93,7 @@ main > ul.tab-block {
   background: #f1fcf1 !important;
   color: #32b643 !important;
 }
+
+#mod-versions {
+  overflow-y: scroll;
+}

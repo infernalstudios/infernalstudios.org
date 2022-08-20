@@ -32,6 +32,11 @@ const mods = [
     urlIdentifier: "celestialconfig",
     logo: "/img/celestial-config-logo.webp",
   },
+  {
+    name: "Elytra Bounce",
+    urlIdentifier: "elytrabounce",
+    logo: "/img/elytra-bounce-logo.webp",
+  },
 ];
 
 for (let i = 0; i < mods.length; i++) {

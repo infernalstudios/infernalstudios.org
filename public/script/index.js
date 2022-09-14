@@ -15,7 +15,6 @@ const mods = [
     name: "Food Effects",
     urlIdentifier: "foodeffects",
     logo: "/img/food-effects-logo.webp",
-    customImgStyle: "width: 22vw;",
   },
   {
     name: "Second Chance",
@@ -56,10 +55,9 @@ window.addEventListener("DOMContentLoaded", () => {
     const modElement = document.createElement("div");
     modElement.classList.add("column", "col-4", "px-2", "col-lg-auto", "col-mx-auto", "align-middle");
     const mod = mods[i];
-    const imgStyle = "customImgStyle" in mod ? `style="${mod.customImgStyle}"` : "";
     modElement.innerHTML = `
       <h4>
-        <img alt="${mod.name} Logo" class="mod-logo" src="${mod.logo}" ${imgStyle} />
+        <img alt="${mod.name} Logo" class="mod-logo" src="${mod.logo}" />
       </h4>
       <h4 class="text-center">
         <ul class="breadcrumb breadcrumb-equal">

@@ -225,6 +225,48 @@ initial_user:
     password:
       $ref: "#/user/properties/password"
 
+edcontribution:
+  type: object
+  required: [id, value, user, isDiscord]
+  properties:
+    id:
+      type: string
+    value:
+      type: string
+    user:
+      type: string
+    isDiscord:
+      type: boolean
+
+initial_edcontribution:
+  type: object
+  required: [id, value, user, isDiscord]
+  properties:
+    value:
+      type: string
+    user:
+      type: string
+    isDiscord:
+      type: boolean
+
+edcontributions:
+  type: object
+  properties:
+    a:
+      type: array
+      items:
+        type:
+          $ref: "#/edcontribution"
+
+add_edcontributions:
+  type: object
+  properties:
+    a:
+      type: array
+      items:
+        type:
+          $ref: "#/initial_edcontribution"
+
 error:
   type: array
   items:

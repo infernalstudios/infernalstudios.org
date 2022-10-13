@@ -105,3 +105,5 @@ paths:
     $ref: "./paths/users_id.yml"
   /users/self:
     $ref: "./paths/users_self.yml"
+  /everythingdescriptions/contributions:
+    $ref: "./paths/everythingdescriptions_contributions.yml"

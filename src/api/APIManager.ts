@@ -7,6 +7,7 @@ import { getAuthAPI } from "./AuthAPI";
 import { getModAPI } from "./ModAPI";
 import { getRedirectAPI } from "./RedirectAPI";
 import { StatusAPI } from "./StatusAPI";
+import { getTempEDAPI } from "./TempEDAPI";
 import { getUserAPI } from "./UserAPI";
 
 export function getAPI(database: Database): Router {
@@ -64,6 +65,7 @@ export function getAPI(database: Database): Router {
   api.use("/redirects", getRedirectAPI(database));
   api.use("/mods", getModAPI(database));
   api.use("/users", getUserAPI(database));
+  api.use("/everythingdescriptions", getTempEDAPI(database));
 
   return api;
 }

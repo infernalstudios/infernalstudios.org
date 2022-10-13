@@ -1,6 +1,7 @@
 // Copyright (c) 2022 Infernal Studios, All Rights Reserved unless otherwise explicitly stated.
 import { hashPassword, randomString } from "../util/Util";
 import { Database } from "./Database";
+import { EDContribution, EDContributionSchema, EDContributionsJSON } from "./EDContribution";
 import { Mod, ModSchema } from "./Mod";
 import { Redirect, RedirectSchema } from "./Redirect";
 import { Token, TokenSchema } from "./Token";
@@ -138,5 +139,30 @@ export class UserManager extends DatabaseManager<UserSchema, User> {
     } else {
       return undefined;
     }
+  }
+}
+
+export class EDContributionManager extends DatabaseManager<EDContributionSchema, EDContribution> {
+  public constructor(database: Database) {
+    super(database, "temp_ed", (schema, database) => new EDContribution(schema, database));
+  }
+
+  /** @deprecated Use {@link getAllClean} instead */
+  public override async getAll(): Promise<EDContribution[]> {
+    return await super.getAll();
+  }
+
+  public async getAllClean(): Promise<EDContributionsJSON> {
+    const contributions = await super.getAll();
+    const clean: EDContributionsJSON = {};
+    for (const contribution of contributions) {
+      const key = contribution.getKey();
+      const c = contribution.toJSON();
+      // @ts-expect-error - YES TYPESCRIPT I KNOW THAT IT ISN'T POSSIBLE TO DELETE REQUIRED FIELDS I'M DELETING THEM SO THE'YERE UNDEFINED SO I CAN RETURN THEM SAFELY
+      delete c.key;
+      clean[key] ??= [];
+      clean[key].push(c);
+    }
+    return clean;
   }
 }

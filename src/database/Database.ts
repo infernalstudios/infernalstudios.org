@@ -3,7 +3,8 @@ import chalk from "chalk";
 import knex, { Knex } from "knex";
 import { coloredIdentifier, Logger } from "logerian";
 import { createKnexLogger } from "../util/Util";
-import { ModManager, RedirectManager, TokenManager, UserManager } from "./DatabaseManager";
+import { EDContributionManager, ModManager, RedirectManager, TokenManager, UserManager } from "./DatabaseManager";
+import { EDContributionSchema } from "./EDContribution";
 import { ModSchema } from "./Mod";
 import { RedirectSchema } from "./Redirect";
 import { TokenSchema } from "./Token";
@@ -13,6 +14,7 @@ import { SQLVersionSchema } from "./Version";
 declare module "knex/types/tables" {
   interface Tables {
     mods: ModSchema;
+    temp_ed: EDContributionSchema;
     redirects: RedirectSchema;
     tokens: TokenSchema;
     users: UserSchema;
@@ -34,6 +36,7 @@ export class Database {
   public redirects: RedirectManager = new RedirectManager(this);
   public tokens: TokenManager = new TokenManager(this);
   public users: UserManager = new UserManager(this);
+  public temp_ed: EDContributionManager = new EDContributionManager(this);
 
   public constructor(options: DatabaseOptions) {
     this.options = options;
@@ -58,6 +61,7 @@ export class Database {
         await this.redirects.getAllJSON();
         await this.tokens.getAllJSON();
         await this.users.getAllJSON();
+        await this.temp_ed.getAllJSON();
 
         if ((await this.users.getAll()).length === 0) {
           this.logger.warn("No users found in database");
@@ -98,7 +102,19 @@ export class Database {
       this.logger.debug(chalk`Table {green 'tokens'} setup`);
     });
 
-    await Promise.all([modsPromise, versionsPromise, redirectsPromise, usersPromise, tokensPromise]);
+    this.logger.debug(chalk`Setting up table {green 'temp_ed'}...`);
+    const edContributionsPromise = this.setupTempEDTable().then(() =>
+      this.logger.debug(chalk`Table {green 'temp_ed'} setup`)
+    );
+
+    await Promise.all([
+      modsPromise,
+      versionsPromise,
+      redirectsPromise,
+      usersPromise,
+      tokensPromise,
+      edContributionsPromise,
+    ]);
 
     this.logger.info("Database setup complete!");
   }
@@ -168,6 +184,19 @@ export class Database {
         table.jsonb("dependencies").notNullable();
         table.foreign("mod").references("mods.id").onDelete("CASCADE");
         table.primary(["mod", "id", "minecraft", "loader"]);
+      });
+    }
+  }
+
+  private async setupTempEDTable(): Promise<void> {
+    if (!(await this.sql.schema.hasTable("temp_ed"))) {
+      this.logger.debug("Table temp_ed doesn't exist, creating...");
+      await this.sql.schema.createTable("temp_ed", table => {
+        table.string("id", 32).index().primary().notNullable();
+        table.string("key", 255).notNullable();
+        table.string("value", 2047).notNullable();
+        table.string("user", 255).notNullable();
+        table.boolean("isDiscord").notNullable().defaultTo(false);
       });
     }
   }

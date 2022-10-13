@@ -133,3 +133,16 @@ user:
     id: "peasant"
     permissions: []
     passwordChangeRequested: true
+
+edcontributions:
+  summary: ED Contributions
+  value:
+    "everydesc.minecraft:coal":
+      - value: "Cool furnace thing!"
+        user: "discord_user_id"
+        isDiscord: true
+        id: "abcdefg"
+      - value: "Cool furnace thing but worded differently!"
+        user: "user_id"
+        isDiscord: false
+        id: "3125476980"

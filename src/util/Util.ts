@@ -1,10 +1,11 @@
 // Copyright (c) 2022 Infernal Studios, All Rights Reserved unless otherwise explicitly stated.
+import chalk from "chalk";
 import { pbkdf2, randomBytes } from "crypto";
 import { parse as envparse } from "dotenv";
 import { NextFunction, Request, Response } from "express";
 import fs from "fs-extra";
 import { Knex } from "knex";
-import { coloredIdentifier, Logger, LoggerLevel } from "logerian";
+import { Logger } from "logerian";
 import path from "path";
 import { formatWithOptions } from "util";
 import { Primitive, z, ZodLiteral, ZodUnion } from "zod";
@@ -109,11 +110,10 @@ export function randomString(length = 32): string {
 
 export function createKnexLogger(logger: Logger): Knex.Logger {
   const databaseLogger = new Logger({
-    identifier: "Database",
-    identifierPrefix: (a, b) => coloredIdentifier(92, 90)(a, b) + "\t",
+    identifier: chalk`{gray [}{green Database}{gray ]}\t`,
     streams: [
       {
-        level: LoggerLevel.DEBUG,
+        level: "DEBUG",
         stream: logger,
       },
     ],

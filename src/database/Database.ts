@@ -1,7 +1,7 @@
 // Copyright (c) 2022 Infernal Studios, All Rights Reserved unless otherwise explicitly stated.
 import chalk from "chalk";
 import knex, { Knex } from "knex";
-import { coloredIdentifier, Logger } from "logerian";
+import { Logger } from "logerian";
 import { createKnexLogger } from "../util/Util";
 import { EDContributionManager, ModManager, RedirectManager, TokenManager, UserManager } from "./DatabaseManager";
 import { EDContributionSchema } from "./EDContribution";
@@ -41,8 +41,7 @@ export class Database {
   public constructor(options: DatabaseOptions) {
     this.options = options;
     this.logger = new Logger({
-      identifier: "Database",
-      identifierPrefix: (a, b) => coloredIdentifier(92, 90)(a, b) + "\t",
+      identifier: chalk`{gray [}{green Database}{gray ]}\t`,
       streams: [{ stream: options.logger }],
     });
   }

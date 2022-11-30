@@ -4,7 +4,7 @@ import cors from "cors";
 import express, { Express, NextFunction, Request, Response } from "express";
 import expressStaticGzip from "express-static-gzip";
 import helmet from "helmet";
-import { coloredIdentifier, Logger, LoggerLevel } from "logerian";
+import { Logger } from "logerian";
 import path from "path";
 import { ZodError } from "zod";
 import { getAPI } from "./api/APIManager";
@@ -24,11 +24,10 @@ export function getApp(database: Database, logger: Logger): Express {
   }
 
   const webLogger = new Logger({
-    identifier: "Web",
-    identifierPrefix: coloredIdentifier(36, 90),
+    identifier: chalk`{gray [}{cyan Web}{gray ]}`,
     streams: [
       {
-        level: LoggerLevel.DEBUG,
+        level: "DEBUG",
         stream: logger,
       },
     ],

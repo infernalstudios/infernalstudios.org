@@ -1,7 +1,7 @@
 // Copyright (c) 2022 Infernal Studios, All Rights Reserved unless otherwise explicitly stated.
 import chalk from "chalk";
 import { readFile } from "fs-extra";
-import { coloredLog, LoggerLevel } from "logerian";
+import { coloredLog } from "logerian";
 import minimist from "minimist";
 import path from "path";
 import { main } from "./entrypoints/main";
@@ -40,9 +40,9 @@ function handleArgs(rawArgv: string[]) {
       const envErrors = await loadEnv(argv.env);
       if (envErrors.length > 0) {
         for (let i = 0; i < envErrors.length; i++) {
-          console.error(`${coloredLog(LoggerLevel.ERROR)} ${envErrors[i]}`);
+          console.error(`${coloredLog("ERROR")} ${envErrors[i]}`);
         }
-        console.error(`${coloredLog(LoggerLevel.FATAL)} Environment variable check failed.`);
+        console.error(`${coloredLog("FATAL")} Environment variable check failed.`);
         process.exit(1);
       }
       await main();
@@ -60,20 +60,20 @@ function handleArgs(rawArgv: string[]) {
           const envErrors = await loadEnv(argv.env);
           if (envErrors.length > 0) {
             for (const error of envErrors) {
-              console.error(coloredLog(LoggerLevel.ERROR) + error);
+              console.error(coloredLog("ERROR") + error);
             }
-            console.error(coloredLog(LoggerLevel.FATAL) + " Environment variables are incorrect.");
+            console.error(coloredLog("FATAL") + " Environment variables are incorrect.");
             process.exit(1);
           } else {
-            console.log(`${coloredLog(LoggerLevel.INFO)} Environment variables are valid.`);
+            console.log(`${coloredLog("INFO")} Environment variables are valid.`);
           }
           break;
         case undefined:
-          console.error(`${coloredLog(LoggerLevel.FATAL)} No test specified.`);
+          console.error(`${coloredLog("FATAL")} No test specified.`);
           failed = true;
           break;
         default:
-          console.error(`${coloredLog(LoggerLevel.FATAL)} Unknown test "${argv._[1]}".`);
+          console.error(`${coloredLog("FATAL")} Unknown test "${argv._[1]}".`);
           failed = true;
           break;
       }
@@ -100,7 +100,7 @@ function handleArgs(rawArgv: string[]) {
             chalk`\t{bold.cyan help} [command|option] - Prints the help message for a specified command or option\n`
           )
             .split("\n")
-            .map(line => `${coloredLog(LoggerLevel.INFO)}${line}`)
+            .map(line => `${coloredLog("INFO")}${line}`)
             .join("\n")
         );
       } else {
@@ -120,7 +120,7 @@ function handleArgs(rawArgv: string[]) {
                 chalk`\t{bold.cyan --version} - Prints the version\n`
               )
                 .split("\n")
-                .map(line => `${coloredLog(LoggerLevel.INFO)}${line}`)
+                .map(line => `${coloredLog("INFO")}${line}`)
                 .join("\n")
             );
             break;
@@ -141,12 +141,12 @@ function handleArgs(rawArgv: string[]) {
                       chalk`\t{bold.cyan --help} - Prints this help message\n`
                     )
                       .split("\n")
-                      .map(line => `${coloredLog(LoggerLevel.INFO)}${line}`)
+                      .map(line => `${coloredLog("INFO")}${line}`)
                       .join("\n")
                   );
                   break;
                 default:
-                  console.error(`${coloredLog(LoggerLevel.FATAL)} Unknown test "${argv._[2]}".`);
+                  console.error(`${coloredLog("FATAL")} Unknown test "${argv._[2]}".`);
                   handleArgs(["help", "test"]);
                   failed = true;
                   break;
@@ -167,7 +167,7 @@ function handleArgs(rawArgv: string[]) {
                   chalk`\t{bold.cyan --help} - Prints this help message or help for the test\n`
                 )
                   .split("\n")
-                  .map(line => `${coloredLog(LoggerLevel.INFO)}${line}`)
+                  .map(line => `${coloredLog("INFO")}${line}`)
                   .join("\n")
               );
             }
@@ -185,7 +185,7 @@ function handleArgs(rawArgv: string[]) {
                 chalk`\t{bold.cyan --help} - Prints this help message\n`
               )
                 .split("\n")
-                .map(line => `${coloredLog(LoggerLevel.INFO)}${line}`)
+                .map(line => `${coloredLog("INFO")}${line}`)
                 .join("\n")
             );
             break;
@@ -202,13 +202,13 @@ function handleArgs(rawArgv: string[]) {
       }
 
       if (argv._.length <= 1) {
-        console.error(`${coloredLog(LoggerLevel.FATAL)} No database url specified.`);
+        console.error(`${coloredLog("FATAL")} No database url specified.`);
         handleArgs(["help", "setup"]);
         process.exit(1);
       }
 
       if (!argv._[1].startsWith("postgres://")) {
-        console.error(`${coloredLog(LoggerLevel.FATAL)} Invalid database url.`);
+        console.error(`${coloredLog("FATAL")} Invalid database url.`);
         handleArgs(["help", "setup"]);
         process.exit(1);
       }
@@ -223,30 +223,28 @@ function handleArgs(rawArgv: string[]) {
         .then(data => {
           try {
             const packageJson = JSON.parse(data.toString());
-            console.log(
-              `${coloredLog(LoggerLevel.INFO)} ${packageJson.name ?? "infernalstudios.org"} v${packageJson.version}`
-            );
+            console.log(`${coloredLog("INFO")} ${packageJson.name ?? "infernalstudios.org"} v${packageJson.version}`);
             process.exit(0);
           } catch {
-            console.error(`${coloredLog(LoggerLevel.FATAL)} Could not parse package.json`);
+            console.error(`${coloredLog("FATAL")} Could not parse package.json`);
             process.exit(1);
           }
         })
         .catch(error => {
-          console.error(`${coloredLog(LoggerLevel.FATAL)} Could not read package.json`);
+          console.error(`${coloredLog("FATAL")} Could not read package.json`);
           console.error(error);
           process.exit(1);
         });
     } else if (argv.help) {
       commands.help();
     } else {
-      console.error(`${coloredLog(LoggerLevel.FATAL)} No command specified.`);
+      console.error(`${coloredLog("FATAL")} No command specified.`);
       commands.help().then(() => process.exit(1));
     }
   } else if (argv._[0] in commands) {
     commands[argv._[0]]();
   } else {
-    console.error(`${coloredLog(LoggerLevel.FATAL)} Unknown command "${argv._[0]}".`);
+    console.error(`${coloredLog("FATAL")} Unknown command "${argv._[0]}".`);
     commands.help();
     process.exit(1);
   }

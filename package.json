@@ -51,7 +51,7 @@
     "fs-extra": "^10.1.0",
     "helmet": "^5.1.0",
     "knex": "^1.0.7",
-    "logerian": "^1.2.3",
+    "logerian": "^2.0.0",
     "minimist": "^1.2.6",
     "pg": "^8.7.3",
     "rate-limiter-flexible": "^2.3.7",

@@ -2,7 +2,7 @@
 import chalk from "chalk";
 import fs from "fs-extra";
 import http from "http";
-import { coloredIdentifier, coloredLog, getLoggerLevelName, Logger, LoggerLevel } from "logerian";
+import { coloredLog, Logger } from "logerian";
 import { AddressInfo } from "net";
 import os from "os";
 import path from "path";
@@ -17,24 +17,24 @@ export async function main() {
   const mainLogger = new Logger({
     streams: [
       {
-        level: process.env.VERBOSE === "true" ? LoggerLevel.DEBUG : LoggerLevel.INFO,
+        level: process.env.VERBOSE === "true" ? "DEBUG" : "INFO",
         stream: process.stdout,
         prefix: coloredLog,
       },
       {
-        level: LoggerLevel.DEBUG,
+        level: "DEBUG",
         stream: fs.createWriteStream(logfile),
-        prefix: (level: LoggerLevel) => `[${new Date().toISOString()}] [${getLoggerLevelName(level)}] `,
+        prefix: (level: string) =>
+          `[${new Date().toISOString()}] [${level[0].toUpperCase() + level.slice(1).toLowerCase()}] `,
       },
     ],
   });
 
   const logger = new Logger({
-    identifier: "Main",
-    identifierPrefix: (a, b) => coloredIdentifier(34, 90)(a, b) + "\t",
+    identifier: chalk`{gray [}{blue Main}{gray ]}\t`,
     streams: [
       {
-        level: LoggerLevel.DEBUG,
+        level: "DEBUG",
         stream: mainLogger,
       },
     ],

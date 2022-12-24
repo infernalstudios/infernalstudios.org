@@ -1829,10 +1829,10 @@ lodash@^4.17.11, lodash@^4.17.21:
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.21.tgz#679591c564c3bffaae8454cf0b3df370c3d6911c"
   integrity sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==
 
-logerian@^1.2.3:
-  version "1.2.3"
-  resolved "https://registry.yarnpkg.com/logerian/-/logerian-1.2.3.tgz#4135bc4cca024d2d92cd562bda961bf585683be5"
-  integrity sha512-j20VWIyi4gE6i2uNQjh7+fzB2NsD5vjMRKVVTdRCCzvirp3Hx/q01YP2qe7qm2f5Fx8zZ2TGi6IoTUKsIO0ppw==
+logerian@^2.0.0:
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/logerian/-/logerian-2.1.1.tgz#ed6b6d19c228b7678e1a0e39132f79cc681d5c7d"
+  integrity sha512-StVOBOZIZWoWqQmumF5hh1sBhMl6qGn3/OCzlLeBKNC6FhgAg/wDALPmfVVCv0uxPjpCBF6uvZbD34/qNZAMrQ==
 
 loose-envify@^1.1.0, loose-envify@^1.4.0:
   version "1.4.0"

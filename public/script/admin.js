@@ -258,38 +258,59 @@ window.addEventListener("DOMContentLoaded", async () => {
             versionCreateButton.disabled = true;
             versionCreateButton.classList.add("loading");
 
-            const response = await fetch("/api/mods/" + mod.id + "/versions", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: "Bearer " + getCookie("token"),
-              },
-              body: JSON.stringify({
-                id: versionIDField.value,
-                name: versionNameField.value,
-                url: versionURLField.value,
-                minecraft: versionMinecraftField.value,
-                recommended: versionRecommendedCheckbox.checked,
-                loader: versionLoaderSelect.value.toLowerCase(),
-                changelog: versionChangelogField.value,
-                dependencies: [],
-              }),
-            });
+            const versionMinecraftValues = versionMinecraftField.value.split(",");
+            /** @type {[string, Response][]} */
+            const responses = [];
 
-            const responseJSON = await response.json();
+            for (const minecraftValue of versionMinecraftValues) {
+              const response = await fetch("/api/mods/" + mod.id + "/versions", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: "Bearer " + getCookie("token"),
+                },
+                body: JSON.stringify({
+                  id: versionIDField.value,
+                  name: versionNameField.value,
+                  url: versionURLField.value,
+                  minecraft: minecraftValue,
+                  recommended: versionRecommendedCheckbox.checked,
+                  loader: versionLoaderSelect.value.toLowerCase(),
+                  changelog: versionChangelogField.value,
+                  dependencies: [],
+                }),
+              });
 
-            if (response.status === 201) {
-              const version = responseJSON;
+              responses.push([minecraftValue, response]);
+            }
+
+            let completed = true;
+            let failedVersions = [];
+            let firstCompletedResponse;
+
+            for (const [minecraftVersion, response] of responses) {
+              const responseJSON = await response.json();
+              if (response.status !== 201) {
+                completed = false;
+                failedVersions.push([minecraftVersion, responseJSON, response]);
+              } else if (!firstCompletedResponse) {
+                firstCompletedResponse = responseJSON;
+              }
+            }
+
+            if (completed) {
+              const version = firstCompletedResponse;
               setModInfo(mod);
               setVersionInfo(version);
             } else {
               errorToast.innerHTML =
-                responseJSON?.errors?.join("<br>") ??
+                failedVersions.map(([, responseJSON]) => responseJSON?.errors?.join("<br>")).join("<br>") ??
                 "There was an error creating the version. Check the console for more details.";
               errorToast.classList.remove("hidden");
               versionIDField.disabled = false;
               versionNameField.disabled = false;
               versionURLField.disabled = false;
+              versionMinecraftField.value = failedVersions.map(([minecraftVersion]) => minecraftVersion).join(",");
               versionMinecraftField.disabled = false;
               versionRecommendedCheckbox.disabled = false;
               versionLoaderSelect.disabled = false;
@@ -297,7 +318,9 @@ window.addEventListener("DOMContentLoaded", async () => {
               versionCreateButton.disabled = false;
               versionCreateButton.classList.remove("loading");
               console.groupCollapsed("Something went wrong when creating a version");
-              console.error({ response, body: responseJSON });
+              for (const [minecraftVersion, responseJSON, response] of failedVersions) {
+                console.error(`minecraftVersion: ${minecraftVersion}`, { response, body: responseJSON });
+              }
               console.groupEnd();
             }
           });

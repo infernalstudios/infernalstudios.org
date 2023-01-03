@@ -2,7 +2,7 @@
 import express, { Router } from "express";
 import cleanVersion from "semver/functions/clean";
 import gtVersion from "semver/functions/gt";
-import validVersion from "semver/functions/valid";
+import validRange from "semver/ranges/valid";
 import { z } from "zod";
 import { Database } from "../database/Database";
 import { getAuthMiddleware, zodLiterals } from "../util/Util";
@@ -178,7 +178,7 @@ export function getModAPI(database: Database): Router {
     }
     versionBody.id = versionId;
 
-    if (!versionBody.dependencies.every(dep => validVersion(dep.version))) {
+    if (!versionBody.dependencies.every(dep => validRange(dep.version, { loose: true, includePrerelease: true }))) {
       res.status(400);
       res.json({
         errors: ["Invalid dependency version"],

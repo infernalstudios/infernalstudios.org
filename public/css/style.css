@@ -25,6 +25,10 @@ footer {
 }
  */
 
+.pr-5 {
+  padding-right: 1rem !important;
+}
+
 #mod-container img.mod-logo {
   margin: 0px;
   width: 100%;
@@ -38,4 +42,62 @@ footer {
 hr {
   margin-top: 16px;
   margin-bottom: 16px;
+}
+
+#patreon-banner {
+  height: calc(100vw * (250 / 1920) + ((1920px - 100vw) / 15));
+  user-select: none;
+  cursor: pointer;
+}
+
+#patreon-banner .banner-bg {
+  position: absolute;
+  transform: translateX(-50%);
+  z-index: -1;
+  height: calc(100vw * (250 / 1920) + ((1920px - 100vw) / 15));
+}
+
+#patreon-banner .banner-text {
+  --banner-text-width: calc((100vw * (250 / 1920) + ((1920px - 100vw) / 15)) * 2.5);
+
+  font-family: "Century Gothic", "Arial Narrow", Arial, sans-serif;
+  font-size: calc(var(--banner-text-width) / 30);
+  font-weight: 600;
+  color: white;
+
+  text-shadow: black 0 0 15px;
+
+  display: flex;
+  margin-left: auto;
+  margin-right: 5%;
+  min-width: 330px;
+  max-width: var(--banner-text-width);
+  height: 100%;
+
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+#patreon-banner .banner-text p {
+  padding: 0;
+  margin: 0;
+}
+
+#patreon-banner .banner-text .smol {
+  font-size: 1em;
+}
+#patreon-banner .banner-text .big {
+  font-size: 2em;
+}
+#patreon-banner .banner-text .humongous {
+  font-size: 3.5em;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: row;
+}
+
+#patreon-banner .banner-text .humongous img {
+  max-height: 3.5rem;
 }

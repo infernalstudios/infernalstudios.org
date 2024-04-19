@@ -227,7 +227,9 @@ export async function loadEnv(envPath: string = path.join(__dirname, "../../.env
   } else {
     process.env.NODE_ENV = output.NODE_ENV || "development";
   }
-  if (!output.YOUTUBE_API_KEY) {
+  if (output.YOUTUBE_API_KEY) {
+    process.env.YOUTUBE_API_KEY = output.YOUTUBE_API_KEY;
+  } else {
     errors.push("YOUTUBE_API_KEY is not set in .env");
   }
   if (output.VERBOSE) {

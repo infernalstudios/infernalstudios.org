@@ -108,6 +108,16 @@ export function randomString(length = 32): string {
     .slice(0, length);
 }
 
+// hacky
+export class LoggerHolder {
+  private static logger = null as unknown as Logger;
+}
+
+export function getLogger(): Logger {
+  // @ts-expect-error LoggerHolder is a hacky class
+  return LoggerHolder.logger;
+}
+
 export function createKnexLogger(logger: Logger): Knex.Logger {
   const databaseLogger = new Logger({
     identifier: chalk`{gray [}{green Database}{gray ]}\t`,
@@ -171,6 +181,7 @@ export async function loadEnv(envPath: string = path.join(__dirname, "../../.env
     SOCKET?: string;
     TRUST_PROXY?: string;
     VERBOSE?: string;
+    YOUTUBE_API_KEY?: string;
   }>(await fs.readFile(envPath));
 
   if (output.DATABASE_LOG) {
@@ -215,6 +226,9 @@ export async function loadEnv(envPath: string = path.join(__dirname, "../../.env
     errors.push("NODE_ENV must be set to either 'production' or 'development' in .env");
   } else {
     process.env.NODE_ENV = output.NODE_ENV || "development";
+  }
+  if (!output.YOUTUBE_API_KEY) {
+    errors.push("YOUTUBE_API_KEY is not set in .env");
   }
   if (output.VERBOSE) {
     process.env.VERBOSE = String(stringToBoolean(output.VERBOSE ?? "false"));

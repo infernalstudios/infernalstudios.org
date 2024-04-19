@@ -74,13 +74,9 @@ export function getApp(database: Database, logger: Logger): Express {
           "script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
         },
       },
-      crossOriginEmbedderPolicy: true,
-      crossOriginOpenerPolicy: {
-        policy: "same-origin",
-      },
-      crossOriginResourcePolicy: {
-        policy: "same-origin",
-      },
+      crossOriginEmbedderPolicy: false,
+      crossOriginOpenerPolicy: false,
+      crossOriginResourcePolicy: false,
       dnsPrefetchControl: true,
       frameguard: true,
       hidePoweredBy: true,

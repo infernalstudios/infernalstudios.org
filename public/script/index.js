@@ -148,19 +148,50 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// Patreon banner
-window.addEventListener("DOMContentLoaded", () => {
-  /** @type {HTMLDivElement} */
-  const bannerContainer = document.getElementById("patreon-banner");
+// Latest video
+/**
+ * @returns {Promise<string | null>}
+ */
+async function getLatestVideoID() {
+  const response = await fetch("/api/content/latest-video");
+  if (!response.ok) return null;
+  const data = await response.json();
+  if (typeof data !== "string") return null;
+  return data;
+}
 
-  const bannerImg = new Image();
-  bannerImg.classList.add("banner-bg");
-  bannerImg.src = patreonBannerImgs[Math.floor(Math.random() * patreonBannerImgs.length)];
+window.addEventListener("DOMContentLoaded", async () => {
+  const videoContainer = document.getElementById("latest-video");
+  const videoId = await getLatestVideoID();
+  if (!videoId) {
+    videoContainer.style.display = "none";
+    return;
+  }
 
-  // We want the img to be first in the html
-  bannerContainer.insertBefore(bannerImg, bannerContainer.firstChild);
+  const videoElement = document.createElement("div");
+  videoElement.classList.add("columns", "col-9", "col-mx-auto");
 
-  bannerContainer.addEventListener("click", () => {
-    window.location.href = "/patreon";
-  });
+  let embedHTML = `
+    <div class="column col-12">
+      <h4 class="text-center">Check out our latest video!</h4>
+      <iframe
+        src=${JSON.stringify("https://www.youtube-nocookie.com/embed/" + videoId)}
+        title="YouTube video player"
+        frameborder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        referrerpolicy="strict-origin-when-cross-origin"
+        allowfullscreen
+        class="video-embed"
+      ></iframe>
+    </div>
+  `;
+
+  videoElement.innerHTML = embedHTML;
+  videoContainer.appendChild(videoElement);
+
+  const sibling = videoContainer.nextElementSibling;
+  if (sibling?.classList?.contains("banner")) {
+    // Set --banner-width to video width
+    sibling.style.setProperty("--banner-width", sibling.clientWidth + "px");
+  }
 });

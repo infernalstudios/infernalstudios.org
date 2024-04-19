@@ -8,7 +8,7 @@ import os from "os";
 import path from "path";
 import { getApp } from "../app";
 import { Database } from "../database/Database";
-import { fileVisible, formatBytes } from "../util/Util";
+import { fileVisible, formatBytes, LoggerHolder } from "../util/Util";
 
 export async function main() {
   const logfile = path.join(__dirname, `../../log/${new Date().toISOString().replace(/[*:?<>|/\\"]/gi, "-")}.txt`);
@@ -29,6 +29,9 @@ export async function main() {
       },
     ],
   });
+
+  // @ts-expect-error LoggerHolder is a hacky class
+  LoggerHolder.logger = mainLogger;
 
   const logger = new Logger({
     identifier: chalk`{gray [}{blue Main}{gray ]}\t`,

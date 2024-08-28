@@ -6,6 +6,7 @@
 SERVICE_NAME="webapp"
 SERVICE_USER="github"
 GIT_REMOTE="https://github.com/infernalstudios.org.git"
+GIT_BRANCH="stable"
 
 # Check if the script is run as root
 if [ "$(id -u)" -eq 0 ]; then
@@ -25,13 +26,15 @@ if [ -z $(command -v screen) ]; then
   exit 1
 fi
 
+echo "Running as $(whoami) in $(pwd)."
+
 # Find service path
-if [ ! -f "~/.service_paths" ]; then
+if [ ! -f "$(pwd)/.service_paths" ]; then
   echo "Did you initialize the service using server-init.sh?: .service_paths not found."
   exit 1
 fi
 
-SERVICE_PATH=$(cat ~/.service_paths | grep $SERVICE_NAME | cut -d' ' -f2)
+SERVICE_PATH=$(cat $(pwd)/.service_paths | grep $SERVICE_NAME | cut -d' ' -f2)
 
 if [ -z "$SERVICE_PATH" ]; then
   echo "Did you initialize the service using server-init.sh?: Service path not found in .service_paths."

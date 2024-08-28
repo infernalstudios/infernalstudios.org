@@ -1,6 +1,6 @@
 {
   "name": "infernalstudios.org",
-  "version": "1.3.8",
+  "version": "1.4.0",
   "private": true,
   "description": "Source code for <https://infernalstudios.org>!",
   "bugs": "https://github.com/infernalexp/infernalstudios.org/issues",
@@ -33,8 +33,8 @@
     "docs": "redoc-cli bundle spec/api.yml --dereferenced --ext yml --lint --output docs/index.html --title \"Infernal Studios API\"",
     "postdocs": "node scripts/postdocs.js docs/index.html",
     "docs:lint": "redoc-cli lint spec/api.yml",
-    "format:check": "prettier --config .prettierrc.json --check spec src public *.json .*.json *.js scripts .github",
-    "format": "prettier --config .prettierrc.json --write spec src public *.json .*.json *.js scripts .github",
+    "format:check": "prettier --config .prettierrc.json --check spec src public *.json .*.json scripts .github",
+    "format": "prettier --config .prettierrc.json --write spec src public *.json .*.json scripts .github",
     "lint:fix": "eslint src --fix",
     "lint": "eslint src",
     "prebuild": "yarn format:check && yarn lint",

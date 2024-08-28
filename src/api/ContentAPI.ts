@@ -22,7 +22,8 @@ function getLatestVideoID(): Promise<string | null> {
         part: "id",
         type: "video",
         channelId: "UCEVX0_x03dKzeZoUGvyEOWg",
-        publishedAfter: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+        order: "date",
+        publishedBefore: new Date(Date.now()).toISOString(),
         key: process.env.YOUTUBE_API_KEY,
       });
 
@@ -64,6 +65,16 @@ function getLatestVideoID(): Promise<string | null> {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function getContentAPI(_database: Database): Router {
   const api = Router();
+
+  api.get("/latest-video/redirect-embed", async (_req, res) => {
+    const video = await getLatestVideoID();
+    if (!video) {
+      res.status(404);
+    } else {
+      res.redirect(302, "https://www.youtube-nocookie.com/embed/" + video);
+    }
+    return res.end();
+  });
 
   api.get("/latest-video", async (_req, res) => {
     const video = await getLatestVideoID();

@@ -71,7 +71,14 @@ export function getApp(database: Database, logger: Logger): Express {
         directives: {
           "default-src": ["*"],
           "img-src": ["*"],
-          "script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+          "script-src": [
+            "'self'",
+            "'unsafe-inline'",
+            "'unsafe-eval'",
+            "https://code.jquery.com/",
+            "https://cdnjs.cloudflare.com/",
+            "https://stackpath.bootstrapcdn.com/",
+          ],
         },
       },
       crossOriginEmbedderPolicy: false,

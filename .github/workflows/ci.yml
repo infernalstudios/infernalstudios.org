@@ -1,4 +1,4 @@
-name: CI/CD
+name: CI
 
 on: [push, pull_request]
 
@@ -241,22 +241,6 @@ jobs:
           echo "::endgroup::"
 
   deploy:
-    runs-on: ubuntu-latest
     if: success() && github.event_name == 'push' && github.ref == 'refs/heads/stable'
     needs: [build, format, lint]
-    steps:
-      - name: Get temporary file
-        id: mktemp
-        run: echo "::set-output name=tempfile::`mktemp`"
-      - name: Write SSH key to temporary file
-        run: echo "${{ secrets.SSH_KEY }}" > ${{ steps.mktemp.outputs.tempfile }}
-      - name: Deploy
-        run: |
-          ssh \
-          -l ${{ secrets.SSH_USER }} \
-          -i ${{ steps.mktemp.outputs.tempfile }} \
-          -o "StrictHostKeyChecking=accept-new" \
-          ${{ secrets.SSH_HOST }} \
-          "
-            ${{ secrets.SSH_COMMAND }}
-          "
+    uses: ./.github/workflows/deploy.yml

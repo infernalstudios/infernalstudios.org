@@ -1,0 +1,37 @@
+name: Deploy to server
+
+concurrency: production
+
+on: workflow_call
+
+jobs:
+  deployment:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Get temporary file for SSH key
+        id: mktemp
+        run: echo "::set-output name=tempfile::`mktemp`"
+
+      - name: Write SSH key to temporary file
+        run: echo "${{ secrets.SSH_KEY }}" > ${{ steps.mktemp.outputs.tempfile }}
+
+      - name: Copy deploy script to server
+        run: |
+          scp \
+          -i ${{ steps.mktemp.outputs.tempfile }} \
+          -o "StrictHostKeyChecking=accept-new" \
+          deploy.sh \
+          ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/deploy.sh
+
+      - name: Run deployment script on server
+        run: |
+          ssh \
+          -l ${{ secrets.SSH_USER }} \
+          -i ${{ steps.mktemp.outputs.tempfile }} \
+          -o "StrictHostKeyChecking=accept-new" \
+          ${{ secrets.SSH_HOST }} \
+          "bash --login -e ~/deploy.sh; rm ~/deploy.sh"

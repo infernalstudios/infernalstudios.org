@@ -73,7 +73,7 @@ yarn build:only
 
 if [ "$!" -ne 0 ]; then
   echo "Failed to build, this should be unreachable."
-  echo "Ignoring this, since tsc transpiles everything regardless of errors."
+  echo "Ignoring this, since tsc and webpack transpiles everything regardless of errors."
   echo "This should have been caught by GH Actions."
 fi
 

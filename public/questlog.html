@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Questlog Datapack generator</title>
+    <link rel="stylesheet" href="/css/spectre.min.css" />
+    <link rel="stylesheet" href="/css/spectre-icons.min.css" />
+    <link rel="stylesheet" href="/css/questlog.css" />
+    <script src="/questlog.bundle.js"></script>
+  </head>
+  <body>
+    <noscript>
+      <div class="toast toast-error" align="center">This page requires JavaScript enabled to work!</div>
+    </noscript>
+    <main>
+      <div class="container p-0">
+        <div class="columns col-gapless">
+          <div class="column col-sm-5 col-md-4 col-2">
+            <div class="panel full-height">
+              <div class="panel-body px-0" id="quest-list"></div>
+              <div class="panel-footer">
+                <button class="btn btn-primary w-100" id="add-quest"><i class="icon icon-plus"></i> Add Quest</button>
+                <div class="form-group mt-1">
+                  <button class="btn w-100" id="export-btn">Export Datapack</button>
+                </div>
+              </div>
+            </div>
+
+            <input type="checkbox" class="collapse-column collapse-column-left" id="collapse-quest-select" />
+            <label for="collapse-quest-select" class="collapse-toggle">
+              <i class="icon icon-arrow-left"></i>
+            </label>
+          </div>
+          <div class="column" id="edit-area">
+            <div id="empty-state" class="empty full-height">
+              <p class="empty-title h5">No quest selected</p>
+              <p class="empty-subtitle">Edit a quest by clicking on the sidebar or create a new one!</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- export modal -->
+    <div class="modal" id="export-modal">
+      <a class="modal-overlay" aria-label="Close"></a>
+      <div class="modal-container">
+        <div class="modal-header">
+          <a class="btn btn-clear float-right" aria-label="Close"></a>
+          <div class="modal-title h5">Export Datapack</div>
+        </div>
+        <div class="modal-body">
+          <div class="content">
+            <div class="form-group">
+              <label class="form-label" for="filename">ZIP Filename</label>
+              <input class="form-input w-100" type="text" id="filename" placeholder="" />
+              <p class="form-input-hint" id="filename-error"></p>
+            </div>
+            <div class="form-group">
+              <button class="btn btn-primary w-100" id="export">Export</button>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer text-small text-gray">Note: This tool does not validate your inputs</div>
+      </div>
+    </div>
+  </body>
+</html>

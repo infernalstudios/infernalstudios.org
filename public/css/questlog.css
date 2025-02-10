@@ -1,0 +1,169 @@
+body {
+  overflow-y: hidden;
+}
+
+.full-height {
+  height: 100vh;
+}
+
+.full-height-tab {
+  height: calc(100vh - 1.05rem - 1lh);
+}
+
+.w-100 {
+  width: 100%;
+}
+
+.btn-delete:focus,
+.btn-delete:hover {
+  background: #fcf1f1 !important;
+  color: #e85600 !important;
+  border-color: #e85600;
+}
+
+.btn-delete:focus .icon-delete::before,
+.btn-delete:hover .icon-delete::before {
+  border-color: #e85600;
+}
+
+.btn-delete:focus .icon-delete::after,
+.btn-delete:hover .icon-delete::after {
+  background: #e85600;
+  box-shadow: #e85600 -0.25em 0.2em, #e85600 0.25em 0.2em;
+}
+
+.btn-edit:focus,
+.btn-edit:hover {
+  background: #f1fcf1 !important;
+  color: #32b643 !important;
+  border-color: #32b643;
+}
+
+#edit-area {
+  background-color: #ffffff;
+}
+
+.column > .collapse-column {
+  display: none;
+}
+
+.collapse-column + .collapse-toggle {
+  position: relative;
+  top: calc(-50% + 6px);
+
+  width: 16px;
+  height: 16px;
+
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-left-color: #fff;
+  border-radius: 0 100% 100% 0;
+}
+
+.collapse-column + .collapse-toggle > * {
+  transition: transform ease-in-out 0.5s;
+}
+
+.collapse-column:checked + .collapse-toggle * {
+  transform: rotate(180deg);
+}
+
+.collapse-column-left + .collapse-toggle {
+  right: -100%;
+}
+
+.column:has(> .collapse-column) {
+  transition: width ease-in-out 0.5s;
+}
+
+.column:has(> .collapse-column:checked) {
+  width: 0;
+}
+
+.tile.tile-centered {
+  border-left: 0.1rem solid transparent;
+  transition: border-left-color ease-in-out 0.2s;
+}
+
+.tile.tile-centered.active {
+  border-left-color: #5755d9;
+}
+
+.border-left-panellike {
+  border-left: 1px solid #ccc;
+}
+
+.border-bottom-panellike {
+  border-bottom: 1px solid #ccc;
+}
+
+.noselect {
+  user-select: none;
+}
+
+.noborder {
+  border: none !important;
+}
+
+.noborder-top {
+  border-top: none !important;
+}
+
+.noborder-bottom {
+  border-bottom: none !important;
+}
+
+.noborder-left {
+  border-left: none !important;
+}
+
+.noborder-right {
+  border-right: none !important;
+}
+
+.ws-collapse {
+  white-space: collapse;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.min-w-5em {
+  min-width: 5em;
+}
+
+.input-group-addon.popover {
+  cursor: pointer;
+  min-width: calc(1.7rem + 2px);
+  text-align: center;
+}
+
+.input-group-addon.popover .popover-container {
+  text-align: initial;
+}
+
+textarea.form-input {
+  resize: vertical;
+  /* line-height + padding + border */
+  min-height: calc(1lh + 0.5rem + 2px);
+}
+
+.hljs-attr {
+  color: #895829;
+}
+
+.hljs-string {
+  color: #268c34;
+}
+
+.hljs-number {
+  color: #2f7983;
+}
+
+.hljs-keyword,
+.hljs-literal {
+  color: #76248f;
+}
+
+.text-a-lil-bit {
+  font-size: 0.85rem;
+}

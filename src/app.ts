@@ -101,6 +101,8 @@ export function getApp(database: Database, logger: Logger): Express {
     expressStaticGzip(path.join(__dirname, "../public"), { enableBrotli: true, serveStatic: { extensions: ["html"] } })
   );
 
+  app.use(expressStaticGzip(path.join(__dirname, "../built"), { enableBrotli: true }));
+
   app.use("/api", getAPI(database));
   app.use("/api", (_req, res) => {
     res.status(404);

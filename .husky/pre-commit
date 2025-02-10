@@ -1,4 +1,7 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
-yarn build:noemit
+yarn format:check
+yarn lint
+yarn build:server --noEmit
+yarn build:client # No option for noEmit

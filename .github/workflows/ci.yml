@@ -9,10 +9,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
-      - name: Use Node.js v16
+      - name: Use Node.js v22
         uses: actions/setup-node@v2
         with:
-          node-version: "16.x"
+          node-version: "22.x"
           registry-url: "https://registry.npmjs.org"
 
       - name: Get Yarn Cache Directory Path
@@ -40,10 +40,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
-      - name: Use Node.js v16
+      - name: Use Node.js v22
         uses: actions/setup-node@v2
         with:
-          node-version: "16.x"
+          node-version: "22.x"
           registry-url: "https://registry.npmjs.org"
 
       - name: Get Yarn Cache Directory Path
@@ -71,10 +71,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
-      - name: Use Node.js v16
+      - name: Use Node.js v22
         uses: actions/setup-node@v2
         with:
-          node-version: "16.x"
+          node-version: "22.x"
           registry-url: "https://registry.npmjs.org"
 
       - name: Get Yarn Cache Directory Path
@@ -102,7 +102,7 @@ jobs:
   #     - name: Checkout Repository
   #       uses: actions/checkout@v2
 
-  #     - name: Use Node.js v16
+  #     - name: Use Node.js v22
   #       uses: actions/setup-node@v2
   #       with:
   #         node-version: '16.x'

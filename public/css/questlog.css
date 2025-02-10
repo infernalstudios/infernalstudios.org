@@ -167,3 +167,10 @@ textarea.form-input {
 .text-a-lil-bit {
   font-size: 0.85rem;
 }
+
+.autocomplete {
+  position: absolute;
+  max-height: calc((0.6rem + 1lh) * 5);
+  overflow-y: auto;
+  overflow-x: hidden;
+}

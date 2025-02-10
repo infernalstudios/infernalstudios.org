@@ -9,3 +9,4 @@ scripts/**/*.js
 /public/css/spectre.min.css
 /public/css/spectre-exp.min.css
 /public/css/spectre-icons.min.css
+/public/assets/data

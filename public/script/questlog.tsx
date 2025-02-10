@@ -13,6 +13,7 @@ import {
   RewardDisplay,
 } from "./questlog/types";
 import { createField } from "./questlog/field";
+import { removeNode } from "./util";
 
 const jszip = import("jszip");
 const hljs: Promise<{
@@ -155,18 +156,17 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
         <div class="tile-action">
           <div class="dropdown dropdown-right">
-            <a href="#" class="btn btn-link dropdown-toggle btn-lg pt-1 no-box-shadow" tabindex="0">
+            <a class="btn btn-link dropdown-toggle btn-lg pt-1 no-box-shadow" tabindex="0">
               <i class="icon icon-more-vert"></i>
             </a>
             <ul class="menu">
               <li class="menu-item">
-                <a href="#" class="btn-edit" on:click={() => showQuestEditScreen(id)}>
+                <a class="btn-edit" on:click={() => showQuestEditScreen(id)}>
                   <i class="icon icon-edit mr-2"></i> Edit
                 </a>
               </li>
               <li class="menu-item">
                 <a
-                  href="#"
                   class="btn-delete"
                   on:click={() => {
                     if (confirm("Are you sure you want to delete this quest?")) {
@@ -178,7 +178,7 @@ document.addEventListener("DOMContentLoaded", () => {
                           hideQuestEditScreen();
                         }
 
-                        questEditScreen.remove();
+                        removeNode(questEditScreen);
                       }
 
                       updateQuestList();
@@ -265,21 +265,9 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
     );
 
-    const triggerTab = (
-      <a data-tab="triggers" href="#">
-        Triggers (0)
-      </a>
-    );
-    const objectiveTab = (
-      <a data-tab="objectives" href="#">
-        Objectives (0)
-      </a>
-    );
-    const rewardTab = (
-      <a data-tab="rewards" href="#">
-        Rewards (0)
-      </a>
-    );
+    const triggerTab = <a data-tab="triggers">Triggers (0)</a>;
+    const objectiveTab = <a data-tab="objectives">Objectives (0)</a>;
+    const rewardTab = <a data-tab="rewards">Rewards (0)</a>;
 
     const codePreview = <code id="code-preview" class="full-height text-a-lil-bit"></code>;
 
@@ -288,7 +276,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="column col-8">
           <ul class="tab tab-block mb-0">
             <li class="tab-item">
-              <a class="active" data-tab="general" href="#">
+              <a class="active" data-tab="general">
                 General
               </a>
             </li>
@@ -514,7 +502,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function rerenderTriggerDetails() {
-      triggerDetails.childNodes.forEach(child => child.remove());
+      triggerDetails.innerHTML = "";
 
       const s = selectedTrigger; // Ensure selectedTrigger will not change for event handlers
       if (s) {
@@ -617,7 +605,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function rerenderTriggers() {
       triggerTab.textContent = `Triggers (${questObject.triggers.length})`;
-      triggerList.childNodes.forEach(child => child.remove());
+      triggerList.innerHTML = "";
 
       if (questObject.triggers.length === 0) {
         triggerList.appendChild(<p class="text-gray text-center mt-2">No triggers added yet</p>);
@@ -668,7 +656,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function rerenderObjectiveDetails() {
-      objectiveDetails.childNodes.forEach(child => child.remove());
+      objectiveDetails.innerHTML = "";
 
       const s = selectedObjective; // Ensure selectedObjective will not change for event handlers
       if (s) {
@@ -814,7 +802,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function rerenderObjectives() {
       objectiveTab.textContent = `Objectives (${questObject.objectives.length})`;
-      objectiveList.childNodes.forEach(child => child.remove());
+      objectiveList.innerHTML = "";
 
       if (questObject.objectives.length === 0) {
         objectiveList.appendChild(<p class="text-gray text-center mt-2">No objectives added yet</p>);
@@ -865,7 +853,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function rerenderRewardDetails() {
-      rewardDetails.childNodes.forEach(child => child.remove());
+      rewardDetails.innerHTML = "";
 
       const s = selectedReward; // Ensure selectedReward will not change for event handlers
       if (s) {
@@ -990,7 +978,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function rerenderRewards() {
       rewardTab.textContent = `Rewards (${questObject.rewards.length})`;
-      rewardList.childNodes.forEach(child => child.remove());
+      rewardList.innerHTML = "";
 
       if (questObject.rewards.length === 0) {
         rewardList.appendChild(<p class="text-gray text-center mt-2">No rewards added yet</p>);

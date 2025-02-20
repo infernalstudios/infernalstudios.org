@@ -43,43 +43,6 @@ body {
   background-color: #ffffff;
 }
 
-.column > .collapse-column {
-  display: none;
-}
-
-.collapse-column + .collapse-toggle {
-  position: relative;
-  top: calc(-50% + 6px);
-
-  width: 16px;
-  height: 16px;
-
-  background-color: #fff;
-  border: 1px solid #ccc;
-  border-left-color: #fff;
-  border-radius: 0 100% 100% 0;
-}
-
-.collapse-column + .collapse-toggle > * {
-  transition: transform ease-in-out 0.5s;
-}
-
-.collapse-column:checked + .collapse-toggle * {
-  transform: rotate(180deg);
-}
-
-.collapse-column-left + .collapse-toggle {
-  right: -100%;
-}
-
-.column:has(> .collapse-column) {
-  transition: width ease-in-out 0.5s;
-}
-
-.column:has(> .collapse-column:checked) {
-  width: 0;
-}
-
 .tile.tile-centered {
   border-left: 0.1rem solid transparent;
   transition: border-left-color ease-in-out 0.2s;

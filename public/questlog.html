@@ -57,7 +57,26 @@
             </div>
           </div>
         </div>
-        <div class="modal-footer text-small text-gray">Note: This tool does not validate your inputs</div>
+        <div class="modal-footer text-small text-gray">Note: This tool does not validate your inputs yet</div>
+      </div>
+    </div>
+
+    <!-- restore progress modal -->
+    <div class="modal" id="progress-modal">
+      <a class="modal-overlay" aria-label="Close"></a>
+      <div class="modal-container">
+        <div class="modal-header">
+          <div class="modal-title h5">Restore Progress</div>
+        </div>
+        <div class="modal-body">
+          <p>There has been previous cached progress detected in your browser cache.</p>
+          <p>Do you want to restore it?</p>
+          
+          <div class="columns">
+            <button class="btn btn-success col-6" id="restore-progress">Restore</button>
+            <button class="btn btn-error col-6" id="discard-progress">Discard</button>
+          </div>
+        </div>
       </div>
     </div>
   </body>

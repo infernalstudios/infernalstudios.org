@@ -71,6 +71,28 @@ document.addEventListener("DOMContentLoaded", () => {
     quests: {},
   };
 
+  if (window.localStorage.getItem("cachedState") !== null) {
+    const progressModal = document.querySelector("#progress-modal")!;
+    progressModal.classList.add("active");
+
+    const discardButton = document.querySelector("#discard-progress")!;
+    const restoreButton = document.querySelector("#restore-progress")!;
+
+    const cachedState = JSON.parse(window.localStorage.getItem("cachedState")!);
+    
+    discardButton.addEventListener("click", () => {
+      window.localStorage.removeItem("cachedState");
+      progressModal.classList.remove("active");
+    });
+
+    restoreButton.addEventListener("click", () => {
+      state.quests = cachedState.quests;
+      window.localStorage.removeItem("cachedState");
+      progressModal.classList.remove("active");
+      updateQuestList();
+    });
+  }
+
   const exportModalOpenButton = document.querySelector("#export-btn")!;
   const exportModal = document.querySelector("#export-modal")!;
   const exportButton = document.querySelector("#export")!;
@@ -472,6 +494,7 @@ document.addEventListener("DOMContentLoaded", () => {
     );
 
     function updateCodePreview() {
+      window.localStorage.setItem("cachedState", JSON.stringify(state));
       const code = JSON.stringify(cleanupQuestDefinition(questObject), null, 2);
       codePreview.textContent = code;
       hljs.then(hljs => {

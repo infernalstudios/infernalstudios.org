@@ -242,7 +242,12 @@ document.addEventListener("DOMContentLoaded", () => {
     (document.querySelector("#quest-tile-" + id) as HTMLElement).classList.add("active");
     for (const otherId of Object.keys(state.quests)) {
       if (otherId !== id) {
-        (document.querySelector("#quest-edit-screen-" + otherId) as HTMLElement).style.display = "none";
+        const questEditScreen = document.querySelector("#quest-edit-screen-" + otherId) as HTMLElement;
+
+        if (questEditScreen) {
+          questEditScreen.style.display = "none";
+        }
+
         (document.querySelector("#quest-tile-" + otherId) as HTMLElement).classList.remove("active");
       }
     }

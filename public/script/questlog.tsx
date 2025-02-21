@@ -72,25 +72,28 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   if (window.localStorage.getItem("cachedState") !== null) {
-    const progressModal = document.querySelector("#progress-modal")!;
-    progressModal.classList.add("active");
-
-    const discardButton = document.querySelector("#discard-progress")!;
-    const restoreButton = document.querySelector("#restore-progress")!;
-
     const cachedState = JSON.parse(window.localStorage.getItem("cachedState")!);
+    if (Object.keys(cachedState.quests ?? {}).length > 0) {
+      const progressModal = document.querySelector("#progress-modal")!;
+      progressModal.classList.add("active");
 
-    discardButton.addEventListener("click", () => {
-      window.localStorage.removeItem("cachedState");
-      progressModal.classList.remove("active");
-    });
+      const discardButton = document.querySelector("#discard-progress")!;
+      const restoreButton = document.querySelector("#restore-progress")!;
 
-    restoreButton.addEventListener("click", () => {
-      state.quests = cachedState.quests;
-      window.localStorage.removeItem("cachedState");
-      progressModal.classList.remove("active");
-      updateQuestList();
-    });
+      discardButton.addEventListener("click", () => {
+        progressModal.classList.remove("active");
+      });
+
+      restoreButton.addEventListener("click", () => {
+        state.quests = cachedState.quests;
+        progressModal.classList.remove("active");
+        updateQuestList();
+      });
+    }
+  }
+
+  function updateCache() {
+    window.localStorage.setItem("cachedState", JSON.stringify(state));
   }
 
   const exportModalOpenButton = document.querySelector("#export-btn")!;
@@ -114,7 +117,16 @@ document.addEventListener("DOMContentLoaded", () => {
     exportFilenameError.innerHTML = "";
   });
 
-  exportButton.addEventListener("click", async () => {
+  exportFilenameInput.addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      exportSubmit();
+    }
+  });
+
+  exportButton.addEventListener("click", exportSubmit);
+
+  async function exportSubmit() {
     if (exportFilenameInput.value.trim() === "") {
       exportFilenameInput.parentElement?.classList.add("has-error");
       exportFilenameError.textContent = "Filename cannot be empty";
@@ -122,9 +134,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (!exportFilenameInput.value.endsWith(".zip")) {
-      exportFilenameInput.parentElement?.classList.add("has-error");
-      exportFilenameError.innerHTML = "Filename must end with <code>.zip</code>";
-      return;
+      exportFilenameInput.value += ".zip";
     }
 
     exportButton.classList.add("loading", "disabled");
@@ -164,7 +174,48 @@ document.addEventListener("DOMContentLoaded", () => {
     } finally {
       exportButton.classList.remove("loading", "disabled");
     }
-  });
+  }
+
+  function deleteQuestModal(onConfirm: () => void) {
+    const modal = (
+      <div class="modal active delete-quest-modal">
+        <a class="modal-overlay" aria-label="Close" on:click={() => document.body.removeChild(modal)}></a>
+        <div class="modal-container">
+          <div class="modal-header">
+            <a
+              class="btn btn-clear float-right"
+              aria-label="Close"
+              on:click={() => document.body.removeChild(modal)}
+            ></a>
+            <div class="modal-title h5">Delete Quest</div>
+          </div>
+          <div class="modal-body">
+            <p>This action is irreversible!</p>
+            <p>Are you sure you want to delete this quest?</p>
+
+            <div class="columns">
+              <button
+                class="btn btn-error col-6"
+                on:click={() => {
+                  onConfirm();
+                  document.body.removeChild(modal);
+                }}
+              >
+                Delete
+              </button>
+              <button class="btn col-6" on:click={() => document.body.removeChild(modal)}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+
+    document.body.querySelectorAll(".delete-quest-modal").forEach(modal => document.body.removeChild(modal));
+
+    document.body.appendChild(modal);
+  }
 
   function createQuestTile(id: string) {
     /** @type {Quest} */
@@ -178,39 +229,32 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
         <div class="tile-action">
           <div class="dropdown dropdown-right">
-            <a class="btn btn-link dropdown-toggle btn-lg pt-1 no-box-shadow" tabindex="0">
-              <i class="icon icon-more-vert"></i>
-            </a>
-            <ul class="menu">
-              <li class="menu-item">
-                <a class="btn-edit" on:click={() => showQuestEditScreen(id)}>
-                  <i class="icon icon-edit mr-2"></i> Edit
-                </a>
-              </li>
-              <li class="menu-item">
-                <a
-                  class="btn-delete"
-                  on:click={() => {
-                    if (confirm("Are you sure you want to delete this quest?")) {
-                      delete state.quests[id];
+            <button class="btn btn-edit mr-1" on:click={() => showQuestEditScreen(id)}>
+              <i class="icon icon-edit"></i>
+            </button>
+            <button
+              class="btn btn-delete mr-1"
+              on:click={() => {
+                deleteQuestModal(() => {
+                  delete state.quests[id];
 
-                      const questEditScreen = document.querySelector("#quest-edit-screen-" + id) as HTMLDivElement;
-                      if (questEditScreen) {
-                        if (questEditScreen.style.display !== "none") {
-                          hideQuestEditScreen();
-                        }
-
-                        removeNode(questEditScreen);
-                      }
-
-                      updateQuestList();
+                  const questEditScreen = document.querySelector("#quest-edit-screen-" + id) as HTMLDivElement;
+                  if (questEditScreen) {
+                    if (questEditScreen.style.display !== "none") {
+                      hideQuestEditScreen();
                     }
-                  }}
-                >
-                  <i class="icon icon-delete mr-2"></i> Delete
-                </a>
-              </li>
-            </ul>
+
+                    removeNode(questEditScreen);
+                  }
+
+                  updateQuestList();
+
+                  updateCache();
+                });
+              }}
+            >
+              <i class="icon icon-delete"></i>
+            </button>
           </div>
         </div>
       </div>
@@ -499,7 +543,7 @@ document.addEventListener("DOMContentLoaded", () => {
     );
 
     function updateCodePreview() {
-      window.localStorage.setItem("cachedState", JSON.stringify(state));
+      updateCache();
       const code = JSON.stringify(cleanupQuestDefinition(questObject), null, 2);
       codePreview.textContent = code;
       hljs.then(hljs => {
@@ -1122,6 +1166,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (isEditScreenEmpty()) {
       showQuestEditScreen(id);
     }
+
+    updateCache();
   }
 
   const addQuestButton = document.querySelector("#add-quest") as HTMLButtonElement;

@@ -91,6 +91,19 @@ export const OBJECTIVE_TYPES: TypeDefinition[] = [
     ],
   },
   {
+    type: "questlog:quest_complete",
+    description: <>Tracks this quest to be completed, useful for adding dependency quests.</>,
+    additional: [
+      {
+        key: "quest",
+        name: "Quest",
+        description: <>The quest to track</>,
+        type: "input",
+        optional: false,
+      },
+    ],
+  },
+  {
     type: "questlog:block_mine",
     description: <>Tracks the number of blocks mined by the player</>,
     additional: [

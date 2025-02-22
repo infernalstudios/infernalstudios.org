@@ -635,6 +635,7 @@ document.addEventListener("DOMContentLoaded", () => {
               () => selectedTrigger.total,
               (_, value) => {
                 selectedTrigger.total = Number(value) || 1;
+                rerenderTriggers();
                 updateCodePreview();
               }
             )}
@@ -645,6 +646,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (typeDefinition && typeDefinition.additional) {
           for (const additional of typeDefinition.additional) {
+            if (
+              typeDefinition.type === "questlog:quest_complete" &&
+              additional.type === "input" &&
+              additional.key === "quest"
+            ) {
+              additional.autocomplete = Object.keys(state.quests).map(id => `questlog:quests/${id}`);
+            }
+
             const div = createField(
               additional,
               key => (key in selectedTrigger ? selectedTrigger[key as keyof Objective] : undefined),
@@ -656,6 +665,7 @@ document.addEventListener("DOMContentLoaded", () => {
                   selectedTrigger[key as keyof Objective] = value;
                 }
 
+                rerenderTriggers();
                 updateCodePreview();
               }
             );
@@ -675,6 +685,71 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
+    function inferTriggerName(trigger: Objective & { [key: string]: string | number }): string | undefined {
+      const amount = (trigger.total || 1) === 1 ? "" : `${trigger.total}x `;
+
+      switch (trigger.type) {
+        case "questlog:stat":
+          return `${amount}${trigger.stat}`;
+        case "questlog:block_mine":
+          return `Mine ${amount}${trigger.block}`;
+        case "questlog:block_place":
+          return `Place ${amount}${trigger.block}`;
+        case "questlog:entity_breed":
+          return `Breed ${amount}${trigger.entity}`;
+        case "questlog:entity_death":
+          return `Die to ${amount}${trigger.entity}`;
+        case "questlog:entity_kill":
+          return `Kill ${amount}${trigger.entity}`;
+        case "questlog:item_craft":
+          return `Craft ${amount}${trigger.item}`;
+        case "questlog:item_drop":
+          return `Drop ${amount}${trigger.item}`;
+        case "questlog:item_equip":
+          return `Equip ${amount}${trigger.item}`;
+        case "questlog:item_obtain":
+          return `Obtain ${amount}${trigger.item}`;
+        case "questlog:item_pickup":
+          return `Pick up ${amount}${trigger.item}`;
+        case "questlog:item_use":
+          return `Use ${amount}${trigger.item}`;
+        case "questlog:visit_biome":
+          return `Visit ${amount}${trigger.biome}`;
+        case "questlog:visit_dimension":
+          return `Visit ${amount}${trigger.dimension}`;
+        case "questlog:trample":
+          return `Trample farmland ${amount ? `${amount}times` : ""}`;
+        case "questlog:enchant":
+          switch (true) {
+            case !!(trigger.enchantment && trigger.level && trigger.item):
+              return `Enchant ${amount}${trigger.item} with ${trigger.enchantment} ${trigger.level}`;
+            case !!(trigger.enchantment && trigger.level && !trigger.item):
+              return `Enchant any item ${amount}with ${trigger.enchantment} ${trigger.level}`;
+            case !!(trigger.enchantment && !trigger.level && trigger.item):
+              return `Enchant ${amount}${trigger.item} with ${trigger.enchantment}`;
+            case !!(trigger.enchantment && !trigger.level && !trigger.item):
+              return `Enchant any item ${amount}with ${trigger.enchantment}`;
+            case !!(trigger.enchantment && !trigger.item):
+              return `Enchant any item ${amount}with ${trigger.enchantment}`;
+            case !!(trigger.enchantment && trigger.item):
+              return `Enchant ${amount}${trigger.item} with ${trigger.enchantment}`;
+          }
+          return `Enchant any item ${amount}with any enchantment`;
+        case "questlog:effect_added":
+          return `Gain ${amount}${trigger.effect} effect`;
+        case "questlog:quest_complete":
+          return `Complete ${amount}${
+            typeof trigger.quest === "string"
+              ? (Object.entries(state.quests).find(
+                  ([key]) => "questlog:quests/" + key === (trigger.quest as string)
+                ) ?? { 1: { display: { title: "Unknown Quest" } } })[1]?.display.title
+              : "Unknown Quest"
+          }`;
+      }
+
+      return;
+    }
+
     function rerenderTriggers() {
       triggerTab.textContent = `Triggers (${questObject.triggers.length})`;
       triggerList.innerHTML = "";
@@ -686,7 +761,9 @@ document.addEventListener("DOMContentLoaded", () => {
           const tile = (
             <div class="tile tile-centered">
               <div class="tile-content">
-                <div class="tile-title">{trigger.display?.name || "Untitled Trigger"}</div>
+                <div class="tile-title">
+                  {inferTriggerName(trigger as Objective & { [key: string]: string | number }) || "Unknown Trigger"}
+                </div>
                 <small class="tile-subtitle text-gray">{trigger.type || "Unknown type"}</small>
               </div>
               <div class="tile-action">

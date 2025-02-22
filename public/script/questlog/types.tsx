@@ -144,6 +144,28 @@ export const OBJECTIVE_TYPES: TypeDefinition[] = [
     ],
   },
   {
+    type: "questlog:entity_approach",
+    description: <>Tracks the number of times the player approaches a specific entity</>,
+    additional: [
+      {
+        key: "entity",
+        name: "Entity",
+        description: <>The entity to track.</>,
+        type: "input",
+        optional: false,
+        autocomplete: ENTITIES,
+      },
+      {
+        key: "range",
+        name: "Range",
+        description: <>The range to track the entity in</>,
+        type: "input",
+        isNumber: true,
+        optional: false,
+      },
+    ],
+  },
+  {
     type: "questlog:entity_breed",
     description: <>Tracks the number of times the player breeds entities</>,
     additional: [

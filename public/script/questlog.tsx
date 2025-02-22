@@ -177,6 +177,99 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  const importModalOpenButton = document.querySelector("#import-btn")!;
+  const importModal = document.querySelector("#import-modal")!;
+  const importButton = document.querySelector("#import")!;
+  const importFileInput = document.querySelector("#import-file")! as HTMLInputElement;
+
+  importModalOpenButton.addEventListener("click", () => {
+    importModal.classList.add("active");
+  });
+
+  importModal.querySelectorAll("[aria-label='Close']").forEach(closeButton => {
+    closeButton.addEventListener("click", () => {
+      importModal.classList.remove("active");
+    });
+  });
+
+  importFileInput.addEventListener("change", () => {
+    if (importFileInput.files?.length && importFileInput.files.length > 0) {
+      importButton.classList.remove("disabled");
+    } else {
+      importButton.classList.add("disabled");
+    }
+  });
+
+  importButton.addEventListener("click", async () => {
+    if (importFileInput.files?.length && importFileInput.files.length === 0) {
+      return;
+    }
+
+    try {
+      let zip = new (await jszip).default();
+      zip = await zip.loadAsync(importFileInput.files![0]);
+
+      const questsFile = zip.file("data/questlog/quests.json");
+      if (!questsFile) {
+        throw new Error("No quests.json file found in the zip");
+      }
+
+      let quests: string[];
+      try {
+        quests = JSON.parse(await questsFile.async("text")).quests;
+      } catch (e) {
+        console.error(e);
+        throw new Error("Failed to parse quests.json");
+      }
+
+      const newQuests: Partial<Record<string, Quest>> = {};
+
+      for (const questPath of quests) {
+        if (questPath.indexOf(":") === -1) {
+          throw new Error(`Invalid quest path: ${questPath}`);
+        }
+
+        const questNamespace = questPath.substring(0, questPath.indexOf(":"));
+        const questId = questPath.substring(questPath.indexOf(":") + 1);
+
+        const questFilePath = `data/${questNamespace}/${questId}.json`;
+
+        const questFile = zip.file(questFilePath);
+        if (!questFile) {
+          throw new Error(`No quest file found at ${questFilePath}`);
+        }
+
+        let quest: Quest;
+        try {
+          quest = JSON.parse(await questFile.async("text"));
+        } catch (e) {
+          console.error(e);
+          throw new Error(`Failed to parse quest file at ${questFilePath}`);
+        }
+
+        newQuests[questId.substring(questId.lastIndexOf("/") + 1)] = quest;
+
+        console.debug(`Imported quest ${questPath}`, {
+          questId: questId.substring(questId.lastIndexOf("/") + 1),
+          questFilePath,
+          questNamespace,
+          quest,
+        });
+      }
+
+      state.quests = newQuests;
+
+      updateQuestList();
+      updateCache();
+      importModal.classList.remove("active");
+    } catch (e) {
+      console.error(e);
+      alert("An error occurred while importing the file. Check the console for more information.");
+    } finally {
+      exportButton.classList.remove("loading", "disabled");
+    }
+  });
+
   function deleteQuestModal(onConfirm: () => void) {
     const modal = (
       <div class="modal active delete-quest-modal">

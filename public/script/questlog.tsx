@@ -14,6 +14,7 @@ import {
 } from "./questlog/types";
 import { createField } from "./questlog/field";
 import { removeNode } from "./util";
+import { SOUNDS } from "./questlog/data";
 
 const jszip = import("jszip");
 const hljs: Promise<{
@@ -562,6 +563,119 @@ document.addEventListener("DOMContentLoaded", () => {
                       questObject.display.hidden = true;
                     } else {
                       delete questObject.display.hidden;
+                    }
+                  }
+                )}
+                {createField(
+                  {
+                    key: "sound_completed",
+                    type: "input",
+                    description: <>The sound to play when the quest is completed.</>,
+                    name: "Completion Sound",
+                    optional: true,
+                    autocomplete: SOUNDS,
+                  },
+                  () => questObject.display.sound?.completed,
+                  (_, value) => {
+                    if (value) {
+                      questObject.display.sound ??= {};
+                      questObject.display.sound.completed = value as string;
+                    } else {
+                      delete questObject.display.sound?.completed;
+                      if (Object.keys(questObject.display.sound ?? {}).length === 0) {
+                        delete questObject.display.sound;
+                      }
+                    }
+                  }
+                )}
+                {createField(
+                  {
+                    key: "sound_triggered",
+                    type: "input",
+                    description: <>The sound to play when the quest is triggered.</>,
+                    name: "Trigger Sound",
+                    optional: true,
+                    autocomplete: SOUNDS,
+                  },
+                  () => questObject.display.sound?.triggered,
+                  (_, value) => {
+                    if (value) {
+                      questObject.display.sound ??= {};
+                      questObject.display.sound.triggered = value as string;
+                    } else {
+                      delete questObject.display.sound?.triggered;
+                      if (Object.keys(questObject.display.sound ?? {}).length === 0) {
+                        delete questObject.display.sound;
+                      }
+                    }
+                  }
+                )}
+                {createField(
+                  {
+                    key: "popup",
+                    type: "boolean",
+                    description: (
+                      <>
+                        Determines whether to show a popup on trigger instead of a toast.
+                        <br />
+                        Read more in the wiki.
+                      </>
+                    ),
+                    name: "Should popup?",
+                    optional: true,
+                  },
+                  () => questObject.display.notification?.popup || false,
+                  (_, value) => {
+                    if (value) {
+                      questObject.display.notification ??= {};
+                      questObject.display.notification.popup = true;
+                    } else {
+                      delete questObject.display.notification?.popup;
+                      if (Object.keys(questObject.display.notification ?? {}).length === 0) {
+                        delete questObject.display.notification;
+                      }
+                    }
+                  }
+                )}
+                {createField(
+                  {
+                    key: "toastOnTrigger",
+                    type: "boolean",
+                    description: <>Enables "Quest Added!" toast</>,
+                    name: "Trigger Toast",
+                    optional: true,
+                  },
+                  () => questObject.display.notification?.toastOnTrigger || true,
+                  (_, value) => {
+                    if (!value) {
+                      questObject.display.notification ??= {};
+                      questObject.display.notification.toastOnTrigger = false;
+                    } else {
+                      delete questObject.display.notification?.toastOnTrigger;
+                      if (Object.keys(questObject.display.notification ?? {}).length === 0) {
+                        delete questObject.display.notification;
+                      }
+                    }
+                  }
+                )}
+                {createField(
+                  {
+                    key: "toastOnComplete",
+                    type: "boolean",
+                    description: <>Enables "Quest Completed!" toast</>,
+                    name: "Completion Toast",
+                    optional: true,
+                  },
+                  () => questObject.display.notification?.toastOnComplete || true,
+                  (_, value) => {
+                    if (!value) {
+                      questObject.display.notification ??= {};
+                      questObject.display.notification.toastOnComplete = false;
+                    } else {
+                      delete questObject.display.notification?.toastOnComplete;
+                      if (Object.keys(questObject.display.notification ?? {}).length === 0) {
+                        delete questObject.display.notification;
+                      }
                     }
                   }
                 )}
@@ -1143,6 +1257,29 @@ document.addEventListener("DOMContentLoaded", () => {
               (_, value) => {
                 selectedReward.display ??= {} as RewardDisplay;
                 selectedReward.display.icon = value as Renderable;
+                updateCodePreview();
+              }
+            )}
+            {createField(
+              {
+                key: "sound",
+                type: "input",
+                description: (
+                  <>
+                    The sound to play when the reward is collected.
+                    <br />
+                    This is optional, and additional sounds on other rewards will play simultaneously.
+                  </>
+                ),
+                name: "Sound",
+                optional: true,
+                autocomplete: SOUNDS,
+              },
+              () => selectedReward.display?.sound?.claimed,
+              (_, value) => {
+                selectedReward.display ??= {} as RewardDisplay;
+                selectedReward.display.sound ??= {};
+                selectedReward.display.sound.claimed = value as string;
                 updateCodePreview();
               }
             )}

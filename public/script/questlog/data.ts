@@ -31,5 +31,5 @@ fetchAndAppend("./assets/data/dimensions.json", DIMENSIONS);
 fetchAndAppend("./assets/data/effects.json", EFFECTS);
 fetchAndAppend("./assets/data/enchantments.json", ENCHANTMENTS);
 fetchAndAppend("./assets/data/loot_tables.json", LOOT_TABLES);
-// fetchAndAppend("./assets/data/sounds.json", SOUNDS);
+fetchAndAppend("./assets/data/sounds.json", SOUNDS);
 fetchAndAppend("./assets/data/stats.json", STATS);

@@ -81,6 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const restoreButton = document.querySelector("#restore-progress")!;
 
       discardButton.addEventListener("click", () => {
+        window.localStorage.removeItem("cachedState");
         progressModal.classList.remove("active");
       });
 

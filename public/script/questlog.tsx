@@ -2,16 +2,8 @@
 import { _createElement, _fragment } from "simple-jsx-handler";
 declare const React: JSX.IntrinsicElements;
 
-import {
-  Objective,
-  OBJECTIVE_TYPES,
-  ObjectiveDisplay,
-  Quest,
-  Renderable,
-  Reward,
-  REWARD_TYPES,
-  RewardDisplay,
-} from "./questlog/types";
+import { Objective, ObjectiveDisplay, Quest, Renderable, Reward, RewardDisplay } from "./questlog/types";
+import { OBJECTIVE_TYPES, REWARD_TYPES } from "./questlog/definitions";
 import { createField } from "./questlog/field";
 import { removeNode } from "./util";
 import { SOUNDS } from "./questlog/data";

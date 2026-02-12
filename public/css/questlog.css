@@ -137,3 +137,43 @@ textarea.form-input {
   overflow-y: auto;
   overflow-x: hidden;
 }
+
+.input-group {
+  align-items: flex-start;
+}
+
+.input-group .input-group-addon {
+  height: 1.8rem;
+  display: flex;
+  align-items: center;
+  margin-top: 0;
+}
+
+.input-group > .objective-list,
+.input-group > .card {
+  flex: 1 1 auto;
+  width: 100%;
+}
+
+.objective-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.objective-list .d-flex {
+  align-items: flex-start;
+  width: 100%;
+}
+
+.objective-list .btn-action {
+  margin-top: 0.1rem;
+  margin-left: 0.5rem !important;
+}
+
+.input-group .popover {
+  margin-top: 0;
+  height: 1.8rem;
+  display: flex;
+  align-items: center;
+}

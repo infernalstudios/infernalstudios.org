@@ -3,6 +3,111 @@ import { _createElement } from "simple-jsx-handler";
 declare const React: JSX.IntrinsicElements;
 
 import { TypeDefinitionAdditional } from "./types";
+import { OBJECTIVE_TYPES } from "./definitions";
+
+function createObjectiveEditor(value: any, onChange: (newValue: any) => void): HTMLElement {
+  let currentData = value || { type: "questlog:block_mine" };
+
+  const fieldsContainer = <div class="pl-2 border-l-2 ml-1 mt-2"></div>;
+
+  function renderFields() {
+    fieldsContainer.innerHTML = "";
+    const definition = OBJECTIVE_TYPES.find(d => d.type === currentData.type);
+
+    if (definition && definition.additional) {
+      definition.additional.forEach(fieldDef => {
+        const field = createField(
+          fieldDef,
+          key => currentData[key],
+          (key, val) => {
+            currentData[key] = val;
+            onChange(currentData);
+          }
+        );
+        fieldsContainer.appendChild(field);
+      });
+    }
+  }
+
+  const typeSelect = (
+    <select
+      class="form-select"
+      on:change={() => {
+        currentData = { type: typeSelect.value };
+        onChange(currentData);
+        renderFields();
+      }}
+    >
+      {...OBJECTIVE_TYPES.map(def => <option value={def.type}>{def.type.replace("questlog:", "")}</option>)}
+    </select>
+  );
+
+  if (currentData.type) {
+    typeSelect.value = currentData.type;
+  }
+
+  renderFields();
+
+  return (
+    <div class="card p-2 bg-gray-50 mb-2">
+      <div class="form-group">
+        <label class="form-label">Type</label>
+        {typeSelect}
+      </div>
+      {fieldsContainer}
+    </div>
+  );
+}
+
+function createObjectiveListEditor(list: any[], onChange: (newList: any[]) => void): HTMLElement {
+  const container = <div class="objective-list"></div>;
+  const currentList = Array.isArray(list) ? [...list] : [];
+
+  function render() {
+    container.innerHTML = "";
+
+    currentList.forEach((obj, index) => {
+      const row = (
+        <div class="d-flex mb-2 align-items-start">
+          <div style="flex-grow: 1">
+            {createObjectiveEditor(obj, newVal => {
+              currentList[index] = newVal;
+              onChange(currentList);
+            })}
+          </div>
+          <button
+            class="btn btn-action ml-2 btn-error"
+            on:click={() => {
+              currentList.splice(index, 1);
+              onChange(currentList);
+              render();
+            }}
+          >
+            X
+          </button>
+        </div>
+      );
+      container.appendChild(row);
+    });
+
+    const addButton = (
+      <button
+        class="btn btn-sm btn-primary mt-2"
+        on:click={() => {
+          currentList.push({ type: "questlog:block_mine", block: "minecraft:stone" });
+          onChange(currentList);
+          render();
+        }}
+      >
+        + Add Objective
+      </button>
+    );
+    container.appendChild(addButton);
+  }
+
+  render();
+  return container;
+}
 
 export function createField(
   definition: TypeDefinitionAdditional,
@@ -27,9 +132,9 @@ export function createField(
 
     const initial = initialGetter(definition.key);
     if (initial !== undefined) {
-      input.value = initial;
+      input.value = initial as string;
     } else if (definition.default) {
-      input.value = definition.default;
+      input.value = definition.default as string;
     }
 
     inputs.push(input);
@@ -50,7 +155,7 @@ export function createField(
 
     const initial = initialGetter(definition.key);
     if (initial !== undefined) {
-      input.value = initial;
+      input.value = initial as string;
       setter(definition.key, initial);
     }
 
@@ -87,12 +192,12 @@ export function createField(
     if (initial !== undefined) {
       if (typeof initial === "object" && initial !== null) {
         if ("item" in initial) {
-          input.value = initial.item;
+          input.value = (initial as any).item;
           select.value = "item";
         }
 
         if ("texture" in initial) {
-          input.value = initial.texture;
+          input.value = (initial as any).texture;
           select.value = "texture";
         }
       }
@@ -130,9 +235,51 @@ export function createField(
 
     const initial = initialGetter(definition.key);
     if (initial !== undefined) {
-      input.value = initial;
+      input.value = initial as string;
     } else if (definition.default) {
-      input.value = definition.default;
+      input.value = definition.default as string;
+    }
+
+    inputs.push(input);
+  } else if (definition.type === "objective") {
+    const initial = initialGetter(definition.key) || definition.default;
+    const editor = createObjectiveEditor(initial, newValue => {
+      setter(definition.key, newValue);
+    });
+    inputs.push(editor);
+  } else if (definition.type === "objective_list") {
+    const initial = (initialGetter(definition.key) as any[]) || (definition.default as any[]);
+    const listEditor = createObjectiveListEditor(initial, newList => {
+      setter(definition.key, newList);
+    });
+    inputs.push(listEditor);
+  } else if (definition.type === "json") {
+    const input = (
+      <textarea
+        class="form-input"
+        style="font-family: monospace; min-height: 8rem;"
+        on:input={() => {
+          try {
+            if (input.value) {
+              const parsed = JSON.parse(input.value);
+              setter(definition.key, parsed);
+              input.style.borderColor = "";
+            } else {
+              setter(definition.key, null);
+              input.style.borderColor = "";
+            }
+          } catch (e) {
+            input.style.borderColor = "#d73a49";
+          }
+        }}
+      ></textarea>
+    );
+
+    const initial = initialGetter(definition.key);
+    if (initial !== undefined) {
+      input.value = JSON.stringify(initial, null, 2);
+    } else if (definition.default) {
+      input.value = JSON.stringify(definition.default, null, 2);
     }
 
     inputs.push(input);

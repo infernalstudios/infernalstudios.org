@@ -147,8 +147,6 @@ textarea.form-input {
   display: flex;
   align-items: center;
   margin-top: 0;
-  background-color: #f8f9fa;
-  border-color: #dadee4;
 }
 
 .input-group > .objective-list,
@@ -171,14 +169,6 @@ textarea.form-input {
 .objective-list .btn-action {
   margin-top: 0.1rem;
   margin-left: 0.5rem !important;
-  box-shadow: none;
-}
-
-.card.bg-gray-50 {
-  background-color: #fff;
-  border: 1px solid #e7e9ed;
-  box-shadow: 0 0.05rem 0.2rem rgba(48, 55, 66, 0.05);
-  border-radius: 0.2rem;
 }
 
 .input-group .popover {

@@ -161,14 +161,22 @@ textarea.form-input {
   gap: 0.5rem;
 }
 
-.objective-list .d-flex {
+.objective-list-row {
   align-items: flex-start;
   width: 100%;
+  gap: 0.5rem;
 }
 
-.objective-list .btn-action {
-  margin-top: 0.1rem;
-  margin-left: 0.5rem !important;
+.objective-list-row > div:first-child {
+  flex: 1 1 auto;
+}
+
+.objective-delete-btn {
+  margin-top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 
 .input-group .popover {
@@ -176,4 +184,16 @@ textarea.form-input {
   height: 1.8rem;
   display: flex;
   align-items: center;
+}
+
+.objective-list .card {
+  margin-bottom: 0;
+}
+
+.objective-list .card .form-group {
+  margin-bottom: 0.4rem;
+}
+
+.objective-list .card .form-group:last-child {
+  margin-bottom: 0;
 }

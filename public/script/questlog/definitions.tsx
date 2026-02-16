@@ -405,7 +405,7 @@ export const OBJECTIVE_TYPES: TypeDefinition[] = [
     additional: [
       {
         key: "objectives",
-        name: "Conditions",
+        name: "Condition",
         description: <>The list of alternative conditions.</>,
         type: "objective_list",
         optional: false,

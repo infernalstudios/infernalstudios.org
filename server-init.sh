@@ -47,6 +47,6 @@ git checkout origin/$GIT_BRANCH
 
 chown -R $SERVICE_USER $SERVICE_PATH
 
-if [ -z $(command -v screen) ]; then
-  echo "screen is not installed. Please install it before deployment."
+if [ -z $(command -v docker) ]; then
+  echo "docker is not installed. Please install Docker and Docker Compose before deployment."
 fi

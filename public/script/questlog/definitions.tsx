@@ -30,10 +30,11 @@ export const OBJECTIVE_TYPES: TypeDefinition[] = [
         autocomplete: STATS,
       },
       {
-        key: "trackSinceStart",
+        key: "retroactive",
         name: "Should track since start?",
         optional: true,
         type: "boolean",
+        default: true,
         description: (
           <>
             If <code>true</code>, the stat's value will be tracked since the creation of the quest.
@@ -232,26 +233,6 @@ export const OBJECTIVE_TYPES: TypeDefinition[] = [
   {
     type: "questlog:item_obtain",
     description: <>Tracks the number of a specific item the player has in their inventory</>,
-    additional: [
-      {
-        key: "item",
-        name: "Item",
-        description: (
-          <>
-            The item to track.
-            <br />
-            May be the item itself or a tag prefixed with <code>#</code>.
-          </>
-        ),
-        type: "input",
-        optional: false,
-        autocomplete: ITEMS_TAGS,
-      },
-    ],
-  },
-  {
-    type: "questlog:item_pickup",
-    description: <>Tracks the number of a specific item the player picks up</>,
     additional: [
       {
         key: "item",
@@ -483,7 +464,7 @@ export const REWARD_TYPES: TypeDefinition[] = [
         optional: false,
       },
       {
-        key: "level",
+        key: "levels",
         name: "Should give levels?",
         description: <>Whether to give the player levels instead of points</>,
         type: "boolean",

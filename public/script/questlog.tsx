@@ -2,7 +2,7 @@
 import { _createElement, _fragment } from "simple-jsx-handler";
 declare const React: JSX.IntrinsicElements;
 
-import { Objective, ObjectiveDisplay, Quest, Renderable, Reward, RewardDisplay } from "./questlog/types";
+import { Objective, ObjectiveDisplay, Quest, Chapter, Renderable, Reward, RewardDisplay } from "./questlog/types";
 import { OBJECTIVE_TYPES, REWARD_TYPES } from "./questlog/definitions";
 import { createField } from "./questlog/field";
 import { removeNode } from "./util";
@@ -25,48 +25,66 @@ function download(file: File) {
 }
 
 function cleanupQuestDefinition(quest: Quest): Quest {
-  // Clean up the quest object
   const questObject: Quest = JSON.parse(JSON.stringify(quest));
 
-  questObject.triggers = questObject.triggers.filter(t => t.type !== null);
-  questObject.objectives = questObject.objectives.filter(o => o.type !== null);
-  questObject.rewards = questObject.rewards.filter(r => r.type !== null);
+  questObject.requirements = (questObject.requirements || []).filter(t => t.type !== null);
+  questObject.objectives = (questObject.objectives || []).filter(o => o.type !== null);
+  questObject.rewards = (questObject.rewards || []).filter(r => r.type !== null);
 
-  for (const entry of [...questObject.triggers, ...questObject.objectives, ...questObject.rewards]) {
-    if (entry.display && Object.keys(entry.display).length === 0) {
-      delete entry.display;
+  for (const entry of [...questObject.requirements, ...questObject.objectives, ...questObject.rewards]) {
+    if ((entry as any).display && Object.keys((entry as any).display).length === 0) {
+      delete (entry as any).display;
     }
 
-    // Display at the end of the object (hacky)
-    if (entry.display) {
-      const display = entry.display;
-      delete entry.display;
-      entry.display = display;
+    if ((entry as any).display) {
+      const display = (entry as any).display;
+      delete (entry as any).display;
+      if (display.name !== undefined) (entry as any).name = display.name;
+      if (display.icon !== undefined) (entry as any).icon = display.icon;
+      if (display.translatable !== undefined) (entry as any).translatable = display.translatable;
+      if (display.sound?.claimed !== undefined) (entry as any).claim_sound = display.sound.claimed;
     }
   }
 
   return questObject;
 }
 
+function cleanupChapterDefinition(chapter: Chapter): Chapter {
+  return JSON.parse(JSON.stringify(chapter));
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const questList = document.querySelector("#quest-list") as HTMLDivElement;
+  const chapterList = document.querySelector("#chapter-list") as HTMLDivElement;
+
   questList.addEventListener("click", e => {
     if (!(e.target instanceof HTMLElement)) return;
-    if (e.target.classList.contains("quest-item")) {
-      const questId = e.target.getAttribute("data-quest-id");
-      window.location.href = `/quest/${questId}`;
+    const tile = e.target.closest(".quest-item");
+    if (tile) {
+      const questId = tile.getAttribute("data-quest-id");
+      if (questId) showQuestEditScreen(questId);
+    }
+  });
+
+  chapterList.addEventListener("click", e => {
+    if (!(e.target instanceof HTMLElement)) return;
+    const tile = e.target.closest(".chapter-item");
+    if (tile) {
+      const chapterId = tile.getAttribute("data-chapter-id");
+      if (chapterId) showChapterEditScreen(chapterId);
     }
   });
 
   const editArea = document.querySelector("#edit-area")!;
 
-  const state: { quests: Partial<Record<string, Quest>> } = {
+  const state: { quests: Partial<Record<string, Quest>>; chapters: Partial<Record<string, Chapter>> } = {
     quests: {},
+    chapters: {},
   };
 
   if (window.localStorage.getItem("cachedState") !== null) {
     const cachedState = JSON.parse(window.localStorage.getItem("cachedState")!);
-    if (Object.keys(cachedState.quests ?? {}).length > 0) {
+    if (Object.keys(cachedState.quests ?? {}).length > 0 || Object.keys(cachedState.chapters ?? {}).length > 0) {
       const progressModal = document.querySelector("#progress-modal")!;
       progressModal.classList.add("active");
 
@@ -79,9 +97,11 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       restoreButton.addEventListener("click", () => {
-        state.quests = cachedState.quests;
+        state.quests = cachedState.quests || {};
+        state.chapters = cachedState.chapters || {};
         progressModal.classList.remove("active");
         updateQuestList();
+        updateChapterList();
       });
     }
   }
@@ -111,20 +131,9 @@ document.addEventListener("DOMContentLoaded", () => {
     exportFilenameError.innerHTML = "";
   });
 
-  exportFilenameInput.addEventListener("keydown", e => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      exportSubmit();
-    }
-  });
-
-  exportButton.addEventListener("click", exportSubmit);
-
-  async function exportSubmit() {
+  exportButton.addEventListener("click", async () => {
     if (exportFilenameInput.value.trim() === "") {
-      exportFilenameInput.parentElement?.classList.add("has-error");
-      exportFilenameError.textContent = "Filename cannot be empty";
-      return;
+      exportFilenameInput.value = "questlog_config.zip";
     }
 
     if (!exportFilenameInput.value.endsWith(".zip")) {
@@ -136,29 +145,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       const zip = new (await jszip).default();
-      zip.file(
-        "pack.mcmeta",
-        JSON.stringify({
-          pack: {
-            description: "Quests",
-            pack_format: 10,
-          },
-        })
-      );
-
-      zip.file(
-        "data/questlog/quests.json",
-        JSON.stringify(
-          {
-            quests: Object.keys(state.quests).map(id => `questlog:quests/${id}`),
-          },
-          null,
-          2
-        )
-      );
 
       for (const [id, quest] of Object.entries(state.quests)) {
-        zip.file(`data/questlog/quests/${id}.json`, JSON.stringify(cleanupQuestDefinition(quest!), null, 2));
+        zip.file(`config/questlog/quests/${id}.json`, JSON.stringify(cleanupQuestDefinition(quest!), null, 2));
+      }
+
+      for (const [id, chapter] of Object.entries(state.chapters)) {
+        zip.file(`config/questlog/chapters/${id}.json`, JSON.stringify(cleanupChapterDefinition(chapter!), null, 2));
       }
 
       const blob = await zip.generateAsync({ type: "blob" });
@@ -167,8 +160,9 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error(e);
     } finally {
       exportButton.classList.remove("loading", "disabled");
+      exportModal.classList.remove("active");
     }
-  }
+  });
 
   const importModalOpenButton = document.querySelector("#import-btn")!;
   const importModal = document.querySelector("#import-modal")!;
@@ -202,70 +196,77 @@ document.addEventListener("DOMContentLoaded", () => {
       let zip = new (await jszip).default();
       zip = await zip.loadAsync(importFileInput.files![0]);
 
-      const questsFile = zip.file("data/questlog/quests.json");
-      if (!questsFile) {
-        throw new Error("No quests.json file found in the zip");
-      }
-
-      let quests: string[];
-      try {
-        quests = JSON.parse(await questsFile.async("text")).quests;
-      } catch (e) {
-        console.error(e);
-        throw new Error("Failed to parse quests.json");
-      }
-
       const newQuests: Partial<Record<string, Quest>> = {};
+      const newChapters: Partial<Record<string, Chapter>> = {};
+      const promises: Promise<void>[] = [];
 
-      for (const questPath of quests) {
-        if (questPath.indexOf(":") === -1) {
-          throw new Error(`Invalid quest path: ${questPath}`);
+      zip.forEach((relativePath, file) => {
+        if (!file.dir && relativePath.endsWith(".json")) {
+          promises.push(
+            (async () => {
+              try {
+                const content = await file.async("text");
+                const parsed = JSON.parse(content);
+                const id = relativePath.split("/").pop()!.replace(".json", "");
+
+                if (relativePath.includes("config/questlog/quests/")) {
+                  // Unflatten display properties
+                  for (const entry of [
+                    ...(parsed.requirements || []),
+                    ...(parsed.objectives || []),
+                    ...(parsed.rewards || []),
+                  ]) {
+                    const displayProps: any = {};
+                    if (entry.name !== undefined) {
+                      displayProps.name = entry.name;
+                      delete entry.name;
+                    }
+                    if (entry.icon !== undefined) {
+                      displayProps.icon = entry.icon;
+                      delete entry.icon;
+                    }
+                    if (entry.translatable !== undefined) {
+                      displayProps.translatable = entry.translatable;
+                      delete entry.translatable;
+                    }
+                    if (entry.claim_sound !== undefined) {
+                      displayProps.sound = { claimed: entry.claim_sound };
+                      delete entry.claim_sound;
+                    }
+                    if (Object.keys(displayProps).length > 0) entry.display = displayProps;
+                  }
+                  newQuests[id] = parsed;
+                } else if (relativePath.includes("config/questlog/chapters/")) {
+                  newChapters[id] = parsed;
+                }
+              } catch (e) {
+                console.error(`Failed to parse ${relativePath}`, e);
+              }
+            })()
+          );
         }
+      });
 
-        const questNamespace = questPath.substring(0, questPath.indexOf(":"));
-        const questId = questPath.substring(questPath.indexOf(":") + 1);
-
-        const questFilePath = `data/${questNamespace}/${questId}.json`;
-
-        const questFile = zip.file(questFilePath);
-        if (!questFile) {
-          throw new Error(`No quest file found at ${questFilePath}`);
-        }
-
-        let quest: Quest;
-        try {
-          quest = JSON.parse(await questFile.async("text"));
-        } catch (e) {
-          console.error(e);
-          throw new Error(`Failed to parse quest file at ${questFilePath}`);
-        }
-
-        newQuests[questId.substring(questId.lastIndexOf("/") + 1)] = quest;
-
-        console.debug(`Imported quest ${questPath}`, {
-          questId: questId.substring(questId.lastIndexOf("/") + 1),
-          questFilePath,
-          questNamespace,
-          quest,
-        });
-      }
+      await Promise.all(promises);
 
       state.quests = newQuests;
+      state.chapters = newChapters;
 
       updateQuestList();
+      updateChapterList();
       updateCache();
       importModal.classList.remove("active");
     } catch (e) {
       console.error(e);
       alert("An error occurred while importing the file. Check the console for more information.");
     } finally {
-      exportButton.classList.remove("loading", "disabled");
+      importButton.classList.remove("loading", "disabled");
     }
   });
 
-  function deleteQuestModal(onConfirm: () => void) {
+  function deleteModal(type: "Quest" | "Chapter", onConfirm: () => void) {
     const modal = (
-      <div class="modal active delete-quest-modal">
+      <div class="modal active delete-modal">
         <a class="modal-overlay" aria-label="Close" on:click={() => document.body.removeChild(modal)}></a>
         <div class="modal-container">
           <div class="modal-header">
@@ -274,11 +275,11 @@ document.addEventListener("DOMContentLoaded", () => {
               aria-label="Close"
               on:click={() => document.body.removeChild(modal)}
             ></a>
-            <div class="modal-title h5">Delete Quest</div>
+            <div class="modal-title h5">Delete {type}</div>
           </div>
           <div class="modal-body">
             <p>This action is irreversible!</p>
-            <p>Are you sure you want to delete this quest?</p>
+            <p>Are you sure you want to delete this {type.toLowerCase()}?</p>
 
             <div class="columns">
               <button
@@ -299,43 +300,32 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
     );
 
-    document.body.querySelectorAll(".delete-quest-modal").forEach(modal => document.body.removeChild(modal));
-
+    document.body.querySelectorAll(".delete-modal").forEach(modal => document.body.removeChild(modal));
     document.body.appendChild(modal);
   }
 
   function createQuestTile(id: string) {
-    /** @type {Quest} */
     const quest = state.quests[id]!;
-
     const tile = (
-      <div class="tile tile-centered pl-2" id={"quest-tile-" + id}>
-        <div class="tile-content">
-          <div class="tile-title">{quest.display.title || "Untitled Quest"}</div>
+      <div class="tile tile-centered pl-2 quest-item" data-quest-id={id} id={"quest-tile-" + id}>
+        <div class="tile-content" style="cursor: pointer;">
+          <div class="tile-title">{quest.title || "Untitled Quest"}</div>
           <small class="tile-subtitle text-gray">{id}</small>
         </div>
         <div class="tile-action">
           <div class="dropdown dropdown-right">
-            <button class="btn btn-edit mr-1" on:click={() => showQuestEditScreen(id)}>
-              <i class="icon icon-edit"></i>
-            </button>
             <button
               class="btn btn-delete mr-1"
-              on:click={() => {
-                deleteQuestModal(() => {
+              on:click={(e: Event) => {
+                e.stopPropagation();
+                deleteModal("Quest", () => {
                   delete state.quests[id];
-
-                  const questEditScreen = document.querySelector("#quest-edit-screen-" + id) as HTMLDivElement;
-                  if (questEditScreen) {
-                    if (questEditScreen.style.display !== "none") {
-                      hideQuestEditScreen();
-                    }
-
-                    removeNode(questEditScreen);
+                  const screen = document.querySelector("#quest-edit-screen-" + id);
+                  if (screen) {
+                    if ((screen as HTMLElement).style.display !== "none") hideEditScreen();
+                    removeNode(screen);
                   }
-
                   updateQuestList();
-
                   updateCache();
                 });
               }}
@@ -346,7 +336,40 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
       </div>
     );
+    return tile;
+  }
 
+  function createChapterTile(id: string) {
+    const tile = (
+      <div class="tile tile-centered pl-2 chapter-item" data-chapter-id={id} id={"chapter-tile-" + id}>
+        <div class="tile-content" style="cursor: pointer;">
+          <div class="tile-title">Chapter</div>
+          <small class="tile-subtitle text-gray">{id}</small>
+        </div>
+        <div class="tile-action">
+          <div class="dropdown dropdown-right">
+            <button
+              class="btn btn-delete mr-1"
+              on:click={(e: Event) => {
+                e.stopPropagation();
+                deleteModal("Chapter", () => {
+                  delete state.chapters[id];
+                  const screen = document.querySelector("#chapter-edit-screen-" + id);
+                  if (screen) {
+                    if ((screen as HTMLElement).style.display !== "none") hideEditScreen();
+                    removeNode(screen);
+                  }
+                  updateChapterList();
+                  updateCache();
+                });
+              }}
+            >
+              <i class="icon icon-delete"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
     return tile;
   }
 
@@ -354,60 +377,159 @@ document.addEventListener("DOMContentLoaded", () => {
     return (editArea.querySelector("#empty-state") as HTMLElement).style.display !== "none";
   }
 
-  function getShownDetailScreenId(): string {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    //@ts-ignore - We know it's a HTMLElement
-    for (const child of editArea.childNodes) {
-      if (child instanceof HTMLElement && child.style.display !== "none") {
-        return child.id.split("-").slice(-1)[0];
-      }
-    }
-
-    return "";
-  }
-
-  function showQuestEditScreen(id: string) {
-    ensureQuestEditScreen(id);
-    (document.querySelector("#empty-state") as HTMLElement).style.display = "none";
-    (document.querySelector("#quest-edit-screen-" + id) as HTMLElement).style.display = "flex";
-    (document.querySelector("#quest-tile-" + id) as HTMLElement).classList.add("active");
-    for (const otherId of Object.keys(state.quests)) {
-      if (otherId !== id) {
-        const questEditScreen = document.querySelector("#quest-edit-screen-" + otherId) as HTMLElement;
-
-        if (questEditScreen) {
-          questEditScreen.style.display = "none";
-        }
-
-        (document.querySelector("#quest-tile-" + otherId) as HTMLElement).classList.remove("active");
-      }
-    }
-  }
-
-  function hideQuestEditScreen() {
+  function hideEditScreen() {
     editArea.childNodes.forEach(child => {
       if ((child as HTMLElement).style) {
         (child as HTMLElement).style.display = "none";
       }
     });
-
     (document.querySelector("#empty-state") as HTMLElement).style.display = "block";
+  }
+
+  function clearActiveTiles() {
+    document.querySelectorAll(".tile-centered").forEach(el => el.classList.remove("active"));
+  }
+
+  function showQuestEditScreen(id: string) {
+    ensureQuestEditScreen(id);
+    hideEditScreen();
+    (document.querySelector("#empty-state") as HTMLElement).style.display = "none";
+    (document.querySelector("#quest-edit-screen-" + id) as HTMLElement).style.display = "flex";
+    clearActiveTiles();
+    (document.querySelector("#quest-tile-" + id) as HTMLElement).classList.add("active");
+  }
+
+  function showChapterEditScreen(id: string) {
+    ensureChapterEditScreen(id);
+    hideEditScreen();
+    (document.querySelector("#empty-state") as HTMLElement).style.display = "none";
+    (document.querySelector("#chapter-edit-screen-" + id) as HTMLElement).style.display = "flex";
+    clearActiveTiles();
+    (document.querySelector("#chapter-tile-" + id) as HTMLElement).classList.add("active");
+  }
+
+  function ensureChapterEditScreen(id: string) {
+    const chapterObject = state.chapters[id]!;
+    if (document.querySelector("#chapter-edit-screen-" + id)) return;
+
+    const codePreview = <code id="code-preview" class="full-height text-a-lil-bit"></code>;
+
+    const screen: HTMLDivElement = (
+      <div id={"chapter-edit-screen-" + id} class="columns col-gapless">
+        <div class="column col-8 p-2">
+          <div class="border-bottom-panellike py-1 text-center h5">Chapter Editing</div>
+          <form class="p-1 mt-2">
+            {createField(
+              {
+                key: "id",
+                type: "input",
+                description: <>The unique identifier of the chapter.</>,
+                name: "ID",
+                optional: false,
+              },
+              () => id,
+              (_, value) => {
+                const oldId = id;
+                delete state.chapters[oldId];
+                id = value as string;
+                state.chapters[id] = chapterObject;
+                screen.id = "chapter-edit-screen-" + id;
+                updateChapterList();
+              }
+            )}
+            {createField(
+              {
+                key: "icon",
+                type: "icon",
+                description: <>The display icon of the chapter tab.</>,
+                name: "Icon",
+                optional: true,
+              },
+              () => chapterObject.icon,
+              (_, value) => {
+                chapterObject.icon = value as Renderable;
+              }
+            )}
+            {createField(
+              {
+                key: "order",
+                type: "input",
+                isNumber: true,
+                description: <>Specifies the display order of the chapter tabs. Lower numbers appear first.</>,
+                name: "Order",
+                optional: true,
+              },
+              () => chapterObject.order,
+              (_, value) => {
+                chapterObject.order = Number(value);
+              }
+            )}
+            {createField(
+              {
+                key: "default_chapter",
+                type: "boolean",
+                description: <>Whether this chapter should be treated as the default main chapter.</>,
+                name: "Default Chapter",
+                optional: true,
+              },
+              () => chapterObject.default_chapter,
+              (_, value) => {
+                if (value) chapterObject.default_chapter = true;
+                else delete chapterObject.default_chapter;
+              }
+            )}
+            {createField(
+              {
+                key: "hidden",
+                type: "boolean",
+                description: <>Completely hides the chapter from the UI.</>,
+                name: "Hidden",
+                optional: true,
+              },
+              () => chapterObject.hidden,
+              (_, value) => {
+                if (value) chapterObject.hidden = true;
+                else delete chapterObject.hidden;
+              }
+            )}
+          </form>
+        </div>
+        <div class="column col-4 border-left-panellike">
+          <pre class="code m-0">{codePreview}</pre>
+        </div>
+      </div>
+    );
+
+    function updateCodePreview() {
+      updateCache();
+      const code = JSON.stringify(cleanupChapterDefinition(chapterObject), null, 2);
+      codePreview.textContent = code;
+      hljs.then(hljs => {
+        codePreview.innerHTML = hljs.highlight("json", code).value;
+      });
+    }
+
+    screen.querySelectorAll("input, textarea, select").forEach(el => {
+      el.addEventListener("input", updateCodePreview);
+      el.addEventListener("change", updateCodePreview);
+    });
+
+    updateCodePreview();
+    screen.style.display = "none";
+    editArea.appendChild(screen);
   }
 
   function ensureQuestEditScreen(id: string) {
     const questObject = state.quests[id]!;
+    if (document.querySelector("#quest-edit-screen-" + id)) return;
 
-    if (document.querySelector("#quest-edit-screen-" + id)) {
-      return;
-    }
-
-    const triggerDetails: HTMLDivElement = <div class="column col-8"></div>;
+    const reqDetails: HTMLDivElement = <div class="column col-8"></div>;
     const objectiveDetails: HTMLDivElement = <div class="column col-8"></div>;
     const rewardDetails: HTMLDivElement = <div class="column col-8"></div>;
 
-    const triggerList: HTMLDivElement = (
+    const reqList: HTMLDivElement = (
       <div class="panel-body">
-        <p class="text-gray text-center mt-2">No triggers added yet</p>
+        <p class="text-gray text-center mt-2">No requirements added yet</p>
       </div>
     );
 
@@ -423,7 +545,7 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
     );
 
-    const triggerTab = <a data-tab="triggers">Triggers (0)</a>;
+    const reqTab = <a data-tab="requirements">Requirements (0)</a>;
     const objectiveTab = <a data-tab="objectives">Objectives (0)</a>;
     const rewardTab = <a data-tab="rewards">Rewards (0)</a>;
 
@@ -431,14 +553,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const screen: HTMLDivElement = (
       <div id={"quest-edit-screen-" + id} class="columns col-gapless">
-        <div class="column col-8">
+        <div class="column col-8" style="position: relative; z-index: 10;">
           <ul class="tab tab-block mb-0">
             <li class="tab-item">
               <a class="active" data-tab="general">
                 General
               </a>
             </li>
-            <li class="tab-item">{triggerTab}</li>
+            <li class="tab-item">{reqTab}</li>
             <li class="tab-item">{objectiveTab}</li>
             <li class="tab-item">{rewardTab}</li>
           </ul>
@@ -448,19 +570,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <div class="border-bottom-panellike py-1 text-center">Base Settings</div>
               <form class="p-1">
                 {createField(
-                  {
-                    key: "id",
-                    type: "input",
-                    description: (
-                      <>
-                        The unique identifier of the quest.
-                        <br />
-                        This is used to reference the quest in other quests.
-                      </>
-                    ),
-                    name: "ID",
-                    optional: false,
-                  },
+                  { key: "id", type: "input", description: <>Unique identifier</>, name: "ID", optional: false },
                   () => id,
                   (_, value) => {
                     const oldId = id;
@@ -468,27 +578,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     id = value as string;
                     state.quests[id] = questObject;
                     screen.id = "quest-edit-screen-" + id;
-
                     updateQuestList();
                   }
                 )}
                 {createField(
-                  {
-                    key: "title",
-                    type: "input",
-                    description: (
-                      <>
-                        The title of the quest.
-                        <br />
-                        This will be displayed in the quest list and quest details.
-                      </>
-                    ),
-                    name: "Title",
-                    optional: false,
-                  },
-                  () => questObject.display.title,
+                  { key: "title", type: "input", description: <>Quest title</>, name: "Title", optional: false },
+                  () => questObject.title,
                   (_, value) => {
-                    questObject.display.title = value as string;
+                    questObject.title = value as string;
                     updateQuestList();
                   }
                 )}
@@ -496,204 +593,202 @@ document.addEventListener("DOMContentLoaded", () => {
                   {
                     key: "description",
                     type: "textarea",
-                    description: (
-                      <>
-                        The description of the quest.
-                        <br />
-                        This will be displayed in the quest details.
-                      </>
-                    ),
+                    description: <>Quest description</>,
                     name: "Description",
                     optional: true,
                   },
-                  () => questObject.display.description,
+                  () => questObject.description,
                   (_, value) => {
-                    questObject.display.description = value as string;
+                    questObject.description = value as string;
+                  }
+                )}
+                {createField(
+                  { key: "icon", type: "icon", description: <>Quest icon</>, name: "Icon", optional: true },
+                  () => questObject.icon,
+                  (_, value) => {
+                    questObject.icon = value as Renderable;
                   }
                 )}
                 {createField(
                   {
-                    key: "icon",
-                    type: "icon",
-                    description: (
-                      <>
-                        The display icon of the quest.
-                        <br />
-                        This will be displayed in the quest list and quest details.
-                      </>
-                    ),
-                    name: "Icon",
+                    key: "chapter",
+                    type: "input",
+                    description: <>Chapter this quest belongs to</>,
+                    name: "Chapter",
                     optional: true,
                   },
-                  () => questObject.display.icon,
+                  () => questObject.chapter,
                   (_, value) => {
-                    questObject.display.icon = value as Renderable;
+                    questObject.chapter = value as string;
                   }
                 )}
               </form>
             </div>
             <div class="col-6">
-              <div class="border-bottom-panellike py-1 text-center">Style Settings</div>
+              <div class="border-bottom-panellike py-1 text-center">Style & Flags</div>
               <form class="p-1">
+                {createField(
+                  {
+                    key: "sort_order",
+                    type: "input",
+                    isNumber: true,
+                    description: <>The sort order in the list</>,
+                    name: "Sort Order",
+                    optional: true,
+                  },
+                  () => questObject.sort_order,
+                  (_, value) => {
+                    questObject.sort_order = Number(value);
+                  }
+                )}
                 {createField(
                   {
                     key: "hidden",
                     type: "boolean",
-                    description: (
-                      <>
-                        Determines if the quest is hidden from the quest list.
-                        <br />
-                        Hidden quests can still be completed.
-                      </>
-                    ),
+                    description: <>Hide from quest list</>,
                     name: "Hidden",
                     optional: true,
                   },
-                  () => questObject.display.hidden || false,
+                  () => questObject.hidden,
                   (_, value) => {
-                    if (value) {
-                      questObject.display.hidden = true;
-                    } else {
-                      delete questObject.display.hidden;
-                    }
+                    if (value) questObject.hidden = true;
+                    else delete questObject.hidden;
+                    updateCodePreview();
                   }
                 )}
                 {createField(
                   {
-                    key: "sound_completed",
+                    key: "include_in_main",
+                    type: "boolean",
+                    description: <>Include in the main chapter</>,
+                    name: "Include in main",
+                    optional: true,
+                  },
+                  () =>
+                    questObject.include_in_main ??
+                    (questObject.chapter === undefined ||
+                      questObject.chapter === "questlog:main" ||
+                      questObject.chapter === "main"),
+                  (_, value) => {
+                    const isMain =
+                      questObject.chapter === undefined ||
+                      questObject.chapter === "questlog:main" ||
+                      questObject.chapter === "main";
+                    if (value === isMain) delete questObject.include_in_main;
+                    else questObject.include_in_main = value as boolean;
+                    updateCodePreview();
+                  }
+                )}
+                {createField(
+                  {
+                    key: "translatable",
+                    type: "boolean",
+                    description: <>Whether title and description are translation keys</>,
+                    name: "Translatable",
+                    optional: true,
+                  },
+                  () => questObject.translatable,
+                  (_, value) => {
+                    if (value) questObject.translatable = true;
+                    else delete questObject.translatable;
+                    updateCodePreview();
+                  }
+                )}
+                {createField(
+                  {
+                    key: "toast_on_unlock",
+                    type: "boolean",
+                    description: <>Show toast when unlocked</>,
+                    name: "Unlock Toast",
+                    optional: true,
+                  },
+                  () => questObject.toast_on_unlock !== false,
+                  (_, value) => {
+                    if (value === false) questObject.toast_on_unlock = false;
+                    else delete questObject.toast_on_unlock;
+                    updateCodePreview();
+                  }
+                )}
+                {createField(
+                  {
+                    key: "toast_on_complete",
+                    type: "boolean",
+                    description: <>Show toast when completed</>,
+                    name: "Complete Toast",
+                    optional: true,
+                  },
+                  () => questObject.toast_on_complete !== false,
+                  (_, value) => {
+                    if (value === false) questObject.toast_on_complete = false;
+                    else delete questObject.toast_on_complete;
+                    updateCodePreview();
+                  }
+                )}
+                {createField(
+                  {
+                    key: "show_popup_on_unlock",
+                    type: "boolean",
+                    description: <>Show popup instead of toast</>,
+                    name: "Popup on unlock",
+                    optional: true,
+                  },
+                  () => questObject.show_popup_on_unlock,
+                  (_, value) => {
+                    if (value) questObject.show_popup_on_unlock = true;
+                    else delete questObject.show_popup_on_unlock;
+                    updateCodePreview();
+                  }
+                )}
+                {createField(
+                  {
+                    key: "completed_sound",
                     type: "input",
-                    description: <>The sound to play when the quest is completed.</>,
+                    description: <>Sound on completion</>,
                     name: "Completion Sound",
                     optional: true,
                     autocomplete: SOUNDS,
                   },
-                  () => questObject.display.sound?.completed,
+                  () => questObject.completed_sound,
                   (_, value) => {
-                    if (value) {
-                      questObject.display.sound ??= {};
-                      questObject.display.sound.completed = value as string;
-                    } else {
-                      delete questObject.display.sound?.completed;
-                      if (Object.keys(questObject.display.sound ?? {}).length === 0) {
-                        delete questObject.display.sound;
-                      }
-                    }
+                    if (value) questObject.completed_sound = value as string;
+                    else delete questObject.completed_sound;
                   }
                 )}
                 {createField(
                   {
-                    key: "sound_triggered",
+                    key: "triggered_sound",
                     type: "input",
-                    description: <>The sound to play when the quest is triggered.</>,
+                    description: <>Sound on trigger/unlock</>,
                     name: "Trigger Sound",
                     optional: true,
                     autocomplete: SOUNDS,
                   },
-                  () => questObject.display.sound?.triggered,
+                  () => questObject.triggered_sound,
                   (_, value) => {
-                    if (value) {
-                      questObject.display.sound ??= {};
-                      questObject.display.sound.triggered = value as string;
-                    } else {
-                      delete questObject.display.sound?.triggered;
-                      if (Object.keys(questObject.display.sound ?? {}).length === 0) {
-                        delete questObject.display.sound;
-                      }
-                    }
-                  }
-                )}
-                {createField(
-                  {
-                    key: "popup",
-                    type: "boolean",
-                    description: (
-                      <>
-                        Determines whether to show a popup on trigger instead of a toast.
-                        <br />
-                        Read more in the wiki.
-                      </>
-                    ),
-                    name: "Should popup?",
-                    optional: true,
-                  },
-                  () => questObject.display.notification?.popup || false,
-                  (_, value) => {
-                    if (value) {
-                      questObject.display.notification ??= {};
-                      questObject.display.notification.popup = true;
-                    } else {
-                      delete questObject.display.notification?.popup;
-                      if (Object.keys(questObject.display.notification ?? {}).length === 0) {
-                        delete questObject.display.notification;
-                      }
-                    }
-                  }
-                )}
-                {createField(
-                  {
-                    key: "toastOnTrigger",
-                    type: "boolean",
-                    description: <>Enables "Quest Added!" toast</>,
-                    name: "Trigger Toast",
-                    optional: true,
-                  },
-                  () => questObject.display.notification?.toastOnTrigger || true,
-                  (_, value) => {
-                    if (!value) {
-                      questObject.display.notification ??= {};
-                      questObject.display.notification.toastOnTrigger = false;
-                    } else {
-                      delete questObject.display.notification?.toastOnTrigger;
-                      if (Object.keys(questObject.display.notification ?? {}).length === 0) {
-                        delete questObject.display.notification;
-                      }
-                    }
-                  }
-                )}
-                {createField(
-                  {
-                    key: "toastOnComplete",
-                    type: "boolean",
-                    description: <>Enables "Quest Completed!" toast</>,
-                    name: "Completion Toast",
-                    optional: true,
-                  },
-                  () => questObject.display.notification?.toastOnComplete || true,
-                  (_, value) => {
-                    if (!value) {
-                      questObject.display.notification ??= {};
-                      questObject.display.notification.toastOnComplete = false;
-                    } else {
-                      delete questObject.display.notification?.toastOnComplete;
-                      if (Object.keys(questObject.display.notification ?? {}).length === 0) {
-                        delete questObject.display.notification;
-                      }
-                    }
+                    if (value) questObject.triggered_sound = value as string;
+                    else delete questObject.triggered_sound;
                   }
                 )}
               </form>
             </div>
           </div>
 
-          <div data-tab="triggers" class="tab-content columns col-gapless">
+          <div data-tab="requirements" class="tab-content columns col-gapless">
             <div class="column col-4 panel full-height-tab noborder-top">
-              {triggerList}
+              {reqList}
               <div class="panel-footer text-center">
                 <button
                   class="btn btn-primary"
                   on:click={() => {
-                    questObject.triggers.push({
-                      type: null as unknown as string, // Trust. We have a check for null
-                      total: 1,
-                    });
-                    rerenderTriggers();
+                    questObject.requirements.push({ type: null as unknown as string, total: 1 });
+                    rerenderRequirements();
                   }}
                 >
-                  <i class="icon icon-plus"></i> Add Trigger
+                  <i class="icon icon-plus"></i> Add Req.
                 </button>
               </div>
             </div>
-            {triggerDetails}
+            {reqDetails}
           </div>
 
           <div data-tab="objectives" class="tab-content columns col-gapless">
@@ -703,10 +798,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <button
                   class="btn btn-primary"
                   on:click={() => {
-                    questObject.objectives.push({
-                      type: null as unknown as string, // Trust. We have a check for null
-                      total: 1,
-                    });
+                    questObject.objectives.push({ type: null as unknown as string, total: 1 });
                     rerenderObjectives();
                   }}
                 >
@@ -735,7 +827,6 @@ document.addEventListener("DOMContentLoaded", () => {
             {rewardDetails}
           </div>
         </div>
-
         <div class="column col-4 border-left-panellike">
           <pre class="code m-0">{codePreview}</pre>
         </div>
@@ -752,252 +843,126 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function updateInputsForCodePreviewEvents() {
-      screen.querySelectorAll("input, textarea").forEach(input => {
-        input.removeEventListener("input", updateCodePreview);
-        input.addEventListener("input", updateCodePreview);
+      screen.querySelectorAll("input, textarea, select").forEach(el => {
+        el.removeEventListener("input", updateCodePreview);
+        el.addEventListener("input", updateCodePreview);
+        el.removeEventListener("change", updateCodePreview);
+        el.addEventListener("change", updateCodePreview);
       });
-
-      screen.querySelectorAll("select").forEach(select => {
-        select.removeEventListener("change", updateCodePreview);
-        select.addEventListener("change", updateCodePreview);
-      });
-
       updateCodePreview();
     }
-    //#endregion
 
-    //#region Triggers
-    let selectedTrigger: Objective | null = null;
-    function setSelectedTrigger(trigger: Objective) {
-      selectedTrigger = trigger;
-      rerenderTriggerDetails();
+    let selectedReq: Objective | null = null;
+    function setSelectedReq(req: Objective) {
+      selectedReq = req;
+      rerenderReqDetails();
     }
 
-    function rerenderTriggerDetails() {
-      triggerDetails.innerHTML = "";
-
-      const s = selectedTrigger; // Ensure selectedTrigger will not change for event handlers
+    function rerenderReqDetails() {
+      reqDetails.innerHTML = "";
+      const s = selectedReq;
       if (s) {
-        const selectedTrigger = s;
-
-        const form = (
-          <form class="p-1">
-            {createField(
-              {
-                key: "type",
-                type: "select",
-                description: (
-                  <>
-                    Determines the type of the trigger.
-                    <br />
-                    Upon selecting a type, there may be additional fields to fill out.
-                  </>
-                ),
-                name: "Type",
-                optional: false,
-                options: OBJECTIVE_TYPES.map(type => type.type),
-              },
-              () => selectedTrigger.type,
-              (_, value) => {
-                if (selectedTrigger.type !== value) {
-                  // Clear additional fields
-                  const additional = OBJECTIVE_TYPES.find(type => type.type === selectedTrigger.type)?.additional;
-
-                  if (additional) {
-                    for (const { key } of additional) {
-                      delete selectedTrigger[key as keyof Objective];
-                    }
-                  }
-
-                  selectedTrigger.type = value as string;
-
-                  rerenderTriggers();
-                  rerenderTriggerDetails(); // Rerender to update additional fields
+        const form = <form class="p-1"></form>;
+        form.appendChild(
+          createField(
+            {
+              key: "type",
+              type: "select",
+              description: <>Determines the type of requirement</>,
+              name: "Type",
+              optional: false,
+              options: OBJECTIVE_TYPES.map(type => type.type),
+            },
+            () => s.type,
+            (_, value) => {
+              if (s.type !== value) {
+                const additional = OBJECTIVE_TYPES.find(type => type.type === s.type)?.additional;
+                if (additional) for (const { key } of additional) delete s[key as keyof Objective];
+                s.type = value as string;
+                rerenderRequirements();
+                rerenderReqDetails();
+                updateCodePreview();
+              }
+            }
+          )
+        );
+        form.appendChild(
+          createField(
+            { key: "total", type: "input", description: <>The total number</>, name: "Amount", optional: false },
+            () => s.total,
+            (_, value) => {
+              s.total = Number(value) || 1;
+              rerenderRequirements();
+              updateCodePreview();
+            }
+          )
+        );
+        const typeDef = OBJECTIVE_TYPES.find(type => type.type === s.type);
+        if (typeDef?.additional) {
+          for (const additional of typeDef.additional) {
+            form.appendChild(
+              createField(
+                additional,
+                key => (key in s ? s[key as keyof Objective] : undefined),
+                (key, value) => {
+                  if (value === null) delete s[key as keyof Objective];
+                  else (s as any)[key] = value;
+                  rerenderRequirements();
                   updateCodePreview();
                 }
-              }
-            )}
-
-            {createField(
-              {
-                key: "total",
-                type: "input",
-                description: (
-                  <>
-                    The total number of times the player must complete the set task to finish the trigger.
-                    <br />
-                    For example, if the trigger is to mine 100 stone blocks, the total would be <code>100</code>.
-                  </>
-                ),
-                name: "Amount",
-                optional: false,
-              },
-              () => selectedTrigger.total,
-              (_, value) => {
-                selectedTrigger.total = Number(value) || 1;
-                rerenderTriggers();
-                updateCodePreview();
-              }
-            )}
-          </form>
-        );
-
-        const typeDefinition = OBJECTIVE_TYPES.find(type => type.type === selectedTrigger.type);
-
-        if (typeDefinition && typeDefinition.additional) {
-          for (const additional of typeDefinition.additional) {
-            if (
-              typeDefinition.type === "questlog:quest_complete" &&
-              additional.type === "input" &&
-              additional.key === "quest"
-            ) {
-              additional.autocomplete = Object.keys(state.quests).map(id => `questlog:quests/${id}`);
-            }
-
-            const div = createField(
-              additional,
-              key => (key in selectedTrigger ? selectedTrigger[key as keyof Objective] : undefined),
-              (key, value) => {
-                if (value === null) {
-                  delete selectedTrigger[key as keyof Objective];
-                } else {
-                  //@ts-expect-error - SHUT UP
-                  selectedTrigger[key as keyof Objective] = value;
-                }
-
-                rerenderTriggers();
-                updateCodePreview();
-              }
+              )
             );
-
-            form.appendChild(div);
           }
         }
-
-        triggerDetails.appendChild(form);
+        reqDetails.appendChild(form);
       } else {
-        triggerDetails.appendChild(
+        reqDetails.appendChild(
           <div id="empty-state" class="empty full-height-tab">
-            <p class="empty-title h5">No trigger selected</p>
-            <p class="empty-subtitle">Edit a trigger by clicking on the sidebar or create a new one!</p>
+            <p class="empty-title h5">No req selected</p>
           </div>
         );
       }
+      updateInputsForCodePreviewEvents();
     }
 
-    function inferTriggerName(trigger: Objective & { [key: string]: string | number }): string | undefined {
-      const amount = (trigger.total || 1) === 1 ? "" : `${trigger.total}x `;
-
-      switch (trigger.type) {
-        case "questlog:stat":
-          return `${amount}${trigger.stat}`;
-        case "questlog:block_mine":
-          return `Mine ${amount}${trigger.block}`;
-        case "questlog:block_place":
-          return `Place ${amount}${trigger.block}`;
-        case "questlog:entity_breed":
-          return `Breed ${amount}${trigger.entity}`;
-        case "questlog:entity_death":
-          return `Die to ${amount}${trigger.entity}`;
-        case "questlog:entity_kill":
-          return `Kill ${amount}${trigger.entity}`;
-        case "questlog:item_craft":
-          return `Craft ${amount}${trigger.item}`;
-        case "questlog:item_drop":
-          return `Drop ${amount}${trigger.item}`;
-        case "questlog:item_equip":
-          return `Equip ${amount}${trigger.item}`;
-        case "questlog:item_obtain":
-          return `Obtain ${amount}${trigger.item}`;
-        case "questlog:item_pickup":
-          return `Pick up ${amount}${trigger.item}`;
-        case "questlog:item_use":
-          return `Use ${amount}${trigger.item}`;
-        case "questlog:visit_biome":
-          return `Visit ${amount}${trigger.biome}`;
-        case "questlog:visit_dimension":
-          return `Visit ${amount}${trigger.dimension}`;
-        case "questlog:trample":
-          return `Trample farmland ${amount ? `${amount}times` : ""}`;
-        case "questlog:enchant":
-          switch (true) {
-            case !!(trigger.enchantment && trigger.level && trigger.item):
-              return `Enchant ${amount}${trigger.item} with ${trigger.enchantment} ${trigger.level}`;
-            case !!(trigger.enchantment && trigger.level && !trigger.item):
-              return `Enchant any item ${amount}with ${trigger.enchantment} ${trigger.level}`;
-            case !!(trigger.enchantment && !trigger.level && trigger.item):
-              return `Enchant ${amount}${trigger.item} with ${trigger.enchantment}`;
-            case !!(trigger.enchantment && !trigger.level && !trigger.item):
-              return `Enchant any item ${amount}with ${trigger.enchantment}`;
-            case !!(trigger.enchantment && !trigger.item):
-              return `Enchant any item ${amount}with ${trigger.enchantment}`;
-            case !!(trigger.enchantment && trigger.item):
-              return `Enchant ${amount}${trigger.item} with ${trigger.enchantment}`;
-          }
-          return `Enchant any item ${amount}with any enchantment`;
-        case "questlog:effect_added":
-          return `Gain ${amount}${trigger.effect} effect`;
-        case "questlog:quest_complete":
-          return `Complete ${amount}${
-            typeof trigger.quest === "string"
-              ? (Object.entries(state.quests).find(
-                  ([key]) => "questlog:quests/" + key === (trigger.quest as string)
-                ) ?? { 1: { display: { title: "Unknown Quest" } } })[1]?.display.title
-              : "Unknown Quest"
-          }`;
-      }
-
-      return;
-    }
-
-    function rerenderTriggers() {
-      triggerTab.textContent = `Triggers (${questObject.triggers.length})`;
-      triggerList.innerHTML = "";
-
-      if (questObject.triggers.length === 0) {
-        triggerList.appendChild(<p class="text-gray text-center mt-2">No triggers added yet</p>);
+    function rerenderRequirements() {
+      reqTab.textContent = `Requirements (${questObject.requirements.length})`;
+      reqList.innerHTML = "";
+      if (questObject.requirements.length === 0) {
+        reqList.appendChild(<p class="text-gray text-center mt-2">No requirements added yet</p>);
       } else {
-        for (const trigger of questObject.triggers) {
+        for (const req of questObject.requirements) {
           const tile = (
             <div class="tile tile-centered">
               <div class="tile-content">
-                <div class="tile-title">
-                  {inferTriggerName(trigger as Objective & { [key: string]: string | number }) || "Unknown Trigger"}
-                </div>
-                <small class="tile-subtitle text-gray">{trigger.type || "Unknown type"}</small>
+                <div class="tile-title">{req.type || "Unknown Type"}</div>
               </div>
               <div class="tile-action">
-                <div class="dropdown dropdown-right">
-                  <button class="btn btn-edit" on:click={() => setSelectedTrigger(trigger)}>
-                    <i class="icon icon-edit"></i>
-                  </button>
-                  <button
-                    class="btn btn-delete"
-                    on:click={() => {
-                      questObject.triggers = questObject.triggers.filter(t => t !== trigger);
-                      if (selectedTrigger === trigger) {
-                        selectedTrigger = null;
-                        rerenderTriggerDetails();
-                      }
-                      rerenderTriggers();
-                    }}
-                  >
-                    <i class="icon icon-delete"></i>
-                  </button>
-                </div>
+                <button class="btn btn-edit mr-1" on:click={() => setSelectedReq(req)}>
+                  <i class="icon icon-edit"></i>
+                </button>
+                <button
+                  class="btn btn-delete"
+                  on:click={() => {
+                    questObject.requirements = questObject.requirements.filter(t => t !== req);
+                    if (selectedReq === req) {
+                      selectedReq = null;
+                      rerenderReqDetails();
+                    }
+                    rerenderRequirements();
+                  }}
+                >
+                  <i class="icon icon-delete"></i>
+                </button>
               </div>
             </div>
           );
-
-          triggerList.appendChild(tile);
+          reqList.appendChild(tile);
         }
       }
-
       updateInputsForCodePreviewEvents();
     }
-    //#endregion
 
-    //#region Objectives
     let selectedObjective: Objective | null = null;
     function setSelectedObjective(objective: Objective | null) {
       selectedObjective = objective;
@@ -1006,195 +971,129 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function rerenderObjectiveDetails() {
       objectiveDetails.innerHTML = "";
-
-      const s = selectedObjective; // Ensure selectedObjective will not change for event handlers
+      const s = selectedObjective;
       if (s) {
-        const selectedObjective = s;
-
-        const form = (
-          <form class="p-1">
-            {createField(
-              {
-                key: "name",
-                type: "input",
-                description: (
-                  <>
-                    The display text of the objective.
-                    <br />
-                    This will be displayed in the quest details.
-                  </>
-                ),
-                name: "Name",
-                optional: true,
-              },
-              () => selectedObjective.display?.name,
-              (_, value) => {
-                selectedObjective.display ??= {} as ObjectiveDisplay;
-                selectedObjective.display.name = value as string;
-                rerenderObjectives();
-                updateCodePreview();
-              }
-            )}
-            {createField(
-              {
-                key: "icon",
-                type: "icon",
-                description: (
-                  <>
-                    The display icon of the objective.
-                    <br />
-                    This will be displayed in the quest details.
-                  </>
-                ),
-                name: "Icon",
-                optional: true,
-              },
-              () => selectedObjective.display?.icon,
-              (_, value) => {
-                selectedObjective.display ??= {} as ObjectiveDisplay;
-                selectedObjective.display.icon = value as Renderable;
-                updateCodePreview();
-              }
-            )}
-            {createField(
-              {
-                key: "type",
-                type: "select",
-                description: (
-                  <>
-                    Determines the type of the objective.
-                    <br />
-                    Upon selecting a type, there may be additional fields to fill out.
-                  </>
-                ),
-                name: "Type",
-                optional: false,
-                options: OBJECTIVE_TYPES.map(type => type.type),
-              },
-              () => selectedObjective.type,
-              (_, value) => {
-                if (selectedObjective.type !== value) {
-                  // Clear additional fields
-                  const additional = OBJECTIVE_TYPES.find(type => type.type === selectedObjective.type)?.additional;
-
-                  if (additional) {
-                    for (const { key } of additional) {
-                      delete selectedObjective[key as keyof Objective];
-                    }
-                  }
-
-                  selectedObjective.type = value as string;
-
-                  rerenderObjectives();
-                  rerenderObjectiveDetails(); // Rerender to update additional fields
-                  updateCodePreview();
-                }
-              }
-            )}
-            {createField(
-              {
-                key: "total",
-                type: "input",
-                description: (
-                  <>
-                    The total number of times the player must complete the set task to finish the objective.
-                    <br />
-                    For example, if the objective is to mine 100 stone blocks, the total would be <code>100</code>.
-                  </>
-                ),
-                name: "Amount",
-                optional: false,
-              },
-              () => selectedObjective.total,
-              (_, value) => {
-                selectedObjective.total = Number(value) || 1;
-                updateCodePreview();
-              }
-            )}
-          </form>
+        const form = <form class="p-1"></form>;
+        form.appendChild(
+          createField(
+            { key: "name", type: "input", description: <>Display text</>, name: "Name", optional: true },
+            () => s.display?.name,
+            (_, value) => {
+              s.display ??= {} as ObjectiveDisplay;
+              s.display.name = value as string;
+              rerenderObjectives();
+              updateCodePreview();
+            }
+          )
         );
-
-        const typeDefinition = OBJECTIVE_TYPES.find(type => type.type === selectedObjective.type);
-
-        if (typeDefinition && typeDefinition.additional) {
-          for (const additional of typeDefinition.additional) {
-            const div = createField(
-              additional,
-              key => (key in selectedObjective ? selectedObjective[key as keyof Objective] : undefined),
-              (key, value) => {
-                console.log({ key, value });
-                if (value === null) {
-                  delete selectedObjective[key as keyof Objective];
-                } else {
-                  //@ts-expect-error - SHUT UP
-                  selectedObjective[key as keyof Objective] = value;
-                }
+        form.appendChild(
+          createField(
+            { key: "icon", type: "icon", description: <>Display icon</>, name: "Icon", optional: true },
+            () => s.display?.icon,
+            (_, value) => {
+              s.display ??= {} as ObjectiveDisplay;
+              s.display.icon = value as Renderable;
+              updateCodePreview();
+            }
+          )
+        );
+        form.appendChild(
+          createField(
+            {
+              key: "type",
+              type: "select",
+              description: <>Type of the objective</>,
+              name: "Type",
+              optional: false,
+              options: OBJECTIVE_TYPES.map(type => type.type),
+            },
+            () => s.type,
+            (_, value) => {
+              if (s.type !== value) {
+                const additional = OBJECTIVE_TYPES.find(type => type.type === s.type)?.additional;
+                if (additional) for (const { key } of additional) delete s[key as keyof Objective];
+                s.type = value as string;
+                rerenderObjectives();
+                rerenderObjectiveDetails();
+                updateCodePreview();
               }
+            }
+          )
+        );
+        form.appendChild(
+          createField(
+            { key: "total", type: "input", description: <>Amount needed</>, name: "Amount", optional: false },
+            () => s.total,
+            (_, value) => {
+              s.total = Number(value) || 1;
+              updateCodePreview();
+            }
+          )
+        );
+        const typeDef = OBJECTIVE_TYPES.find(type => type.type === s.type);
+        if (typeDef?.additional) {
+          for (const additional of typeDef.additional) {
+            form.appendChild(
+              createField(
+                additional,
+                key => (key in s ? s[key as keyof Objective] : undefined),
+                (key, value) => {
+                  if (value === null) delete s[key as keyof Objective];
+                  else (s as any)[key] = value;
+                }
+              )
             );
-
-            form.appendChild(div);
           }
         }
-
         objectiveDetails.appendChild(form);
       } else {
         objectiveDetails.appendChild(
           <div id="empty-state" class="empty full-height-tab">
             <p class="empty-title h5">No objective selected</p>
-            <p class="empty-subtitle">Edit a objective by clicking on the sidebar or create a new one!</p>
           </div>
         );
       }
-
       updateInputsForCodePreviewEvents();
     }
 
     function rerenderObjectives() {
       objectiveTab.textContent = `Objectives (${questObject.objectives.length})`;
       objectiveList.innerHTML = "";
-
       if (questObject.objectives.length === 0) {
         objectiveList.appendChild(<p class="text-gray text-center mt-2">No objectives added yet</p>);
       } else {
-        for (const objective of questObject.objectives) {
+        for (const obj of questObject.objectives) {
           const tile = (
             <div class="tile tile-centered">
               <div class="tile-content">
-                <div class="tile-title">{objective.display?.name || "Untitled Objective"}</div>
-                <small class="tile-subtitle text-gray">{objective.type || "Unknown type"}</small>
+                <div class="tile-title">{obj.display?.name || obj.type || "Unknown Type"}</div>
               </div>
               <div class="tile-action">
-                <div class="dropdown dropdown-right">
-                  <button class="btn btn-edit" on:click={() => setSelectedObjective(objective)}>
-                    <i class="icon icon-edit"></i>
-                  </button>
-                  <button
-                    class="btn btn-delete"
-                    on:click={() => {
-                      questObject.objectives = questObject.objectives.filter(t => t !== objective);
-                      if (selectedObjective === objective) {
-                        selectedObjective = null;
-                        rerenderObjectiveDetails();
-                      }
-                      rerenderObjectives();
-                    }}
-                  >
-                    <i class="icon icon-delete"></i>
-                  </button>
-                </div>
+                <button class="btn btn-edit mr-1" on:click={() => setSelectedObjective(obj)}>
+                  <i class="icon icon-edit"></i>
+                </button>
+                <button
+                  class="btn btn-delete"
+                  on:click={() => {
+                    questObject.objectives = questObject.objectives.filter(t => t !== obj);
+                    if (selectedObjective === obj) {
+                      selectedObjective = null;
+                      rerenderObjectiveDetails();
+                    }
+                    rerenderObjectives();
+                  }}
+                >
+                  <i class="icon icon-delete"></i>
+                </button>
               </div>
             </div>
           );
-
           objectiveList.appendChild(tile);
         }
       }
-
       updateInputsForCodePreviewEvents();
     }
-    //#endregion
 
-    //#region Rewards
     let selectedReward: Reward | null = null;
     function setSelectedReward(reward: Reward | null) {
       selectedReward = reward;
@@ -1203,155 +1102,119 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function rerenderRewardDetails() {
       rewardDetails.innerHTML = "";
-
-      const s = selectedReward; // Ensure selectedReward will not change for event handlers
+      const s = selectedReward;
       if (s) {
-        const selectedReward = s;
-
-        const form = (
-          <form class="p-1">
-            {createField(
-              {
-                type: "input",
-                key: "name",
-                name: "Name",
-                description: (
-                  <>
-                    The display text of the reward.
-                    <br />
-                    This will be displayed in the quest details when the quest is completed.
-                  </>
-                ),
-                optional: false,
-              },
-              () => selectedReward.display?.name,
-              (_, value) => {
-                selectedReward.display ??= {} as RewardDisplay;
-                selectedReward.display.name = value as string;
-                rerenderRewards();
-              }
-            )}
-            {createField(
-              {
-                key: "icon",
-                type: "icon",
-                description: (
-                  <>
-                    The display icon of the reward.
-                    <br />
-                    This will be displayed in the quest details when the quest is completed.
-                  </>
-                ),
-                name: "Icon",
-                optional: true,
-              },
-              () => selectedReward.display?.icon,
-              (_, value) => {
-                selectedReward.display ??= {} as RewardDisplay;
-                selectedReward.display.icon = value as Renderable;
-                updateCodePreview();
-              }
-            )}
-            {createField(
-              {
-                key: "sound",
-                type: "input",
-                description: (
-                  <>
-                    The sound to play when the reward is collected.
-                    <br />
-                    This is optional, and additional sounds on other rewards will play simultaneously.
-                  </>
-                ),
-                name: "Sound",
-                optional: true,
-                autocomplete: SOUNDS,
-              },
-              () => selectedReward.display?.sound?.claimed,
-              (_, value) => {
-                selectedReward.display ??= {} as RewardDisplay;
-                selectedReward.display.sound ??= {};
-                selectedReward.display.sound.claimed = value as string;
-                updateCodePreview();
-              }
-            )}
-            {createField(
-              {
-                key: "type",
-                type: "select",
-                description: (
-                  <>
-                    Determines the type of the reward.
-                    <br />
-                    Upon selecting a type, there may be additional fields to fill out.
-                  </>
-                ),
-                name: "Type",
-                optional: false,
-                options: REWARD_TYPES.map(type => type.type),
-              },
-              () => selectedReward.type,
-              (_, value) => {
-                if (selectedReward.type !== value) {
-                  // Clear additional fields
-                  const additional = REWARD_TYPES.find(type => type.type === selectedReward.type)?.additional;
-
-                  if (additional) {
-                    for (const { key } of additional) {
-                      delete selectedReward[key as keyof Reward];
-                    }
-                  }
-
-                  selectedReward.type = value as string;
-
-                  rerenderRewards();
-                  rerenderRewardDetails(); // Rerender to update additional fields
-                  updateCodePreview();
-                }
-              }
-            )}
-          </form>
+        const form = <form class="p-1"></form>;
+        form.appendChild(
+          createField(
+            { key: "name", type: "input", description: <>Display text</>, name: "Name", optional: false },
+            () => s.display?.name,
+            (_, value) => {
+              s.display ??= {} as RewardDisplay;
+              s.display.name = value as string;
+              rerenderRewards();
+            }
+          )
         );
-
-        const typeDefinition = REWARD_TYPES.find(type => type.type === selectedReward.type);
-
-        if (typeDefinition && typeDefinition.additional) {
-          for (const additional of typeDefinition.additional) {
-            const div = createField(
-              additional,
-              key => (key in selectedReward ? selectedReward[key as keyof Reward] : undefined),
-              (key, value) => {
-                console.log({ key, value });
-                if (value === null) {
-                  delete selectedReward[key as keyof Reward];
-                } else {
-                  //@ts-expect-error - SHUT UP
-                  selectedReward[key as keyof Reward] = value;
-                }
+        form.appendChild(
+          createField(
+            { key: "icon", type: "icon", description: <>Display icon</>, name: "Icon", optional: true },
+            () => s.display?.icon,
+            (_, value) => {
+              s.display ??= {} as RewardDisplay;
+              s.display.icon = value as Renderable;
+              updateCodePreview();
+            }
+          )
+        );
+        form.appendChild(
+          createField(
+            {
+              key: "auto_claim",
+              type: "boolean",
+              description: <>Automatically claim upon completion</>,
+              name: "Auto Claim",
+              optional: true,
+            },
+            () => s.auto_claim,
+            (_, value) => {
+              if (value) s.auto_claim = true;
+              else delete s.auto_claim;
+              updateCodePreview();
+            }
+          )
+        );
+        form.appendChild(
+          createField(
+            {
+              key: "sound",
+              type: "input",
+              description: <>Sound on collect</>,
+              name: "Sound",
+              optional: true,
+              autocomplete: SOUNDS,
+            },
+            () => s.display?.sound?.claimed,
+            (_, value) => {
+              s.display ??= {} as RewardDisplay;
+              s.display.sound ??= {};
+              s.display.sound.claimed = value as string;
+              updateCodePreview();
+            }
+          )
+        );
+        form.appendChild(
+          createField(
+            {
+              key: "type",
+              type: "select",
+              description: <>Reward type</>,
+              name: "Type",
+              optional: false,
+              options: REWARD_TYPES.map(type => type.type),
+            },
+            () => s.type,
+            (_, value) => {
+              if (s.type !== value) {
+                const additional = REWARD_TYPES.find(type => type.type === s.type)?.additional;
+                if (additional) for (const { key } of additional) delete s[key as keyof Reward];
+                s.type = value as string;
+                rerenderRewards();
+                rerenderRewardDetails();
+                updateCodePreview();
               }
+            }
+          )
+        );
+        const typeDef = REWARD_TYPES.find(type => type.type === s.type);
+        if (typeDef?.additional) {
+          for (const additional of typeDef.additional) {
+            form.appendChild(
+              createField(
+                additional,
+                key => (key in s ? s[key as keyof Reward] : undefined),
+                (key, value) => {
+                  if (value === null) delete s[key as keyof Reward];
+                  else (s as any)[key] = value;
+                }
+              )
             );
-
-            form.appendChild(div);
           }
         }
-
         rewardDetails.appendChild(form);
       } else {
         rewardDetails.appendChild(
           <div id="empty-state" class="empty full-height-tab">
             <p class="empty-title h5">No reward selected</p>
-            <p class="empty-subtitle">Edit a reward by clicking on the sidebar or create a new one!</p>
           </div>
         );
       }
-
       updateInputsForCodePreviewEvents();
     }
 
     function rerenderRewards() {
       rewardTab.textContent = `Rewards (${questObject.rewards.length})`;
       rewardList.innerHTML = "";
-
       if (questObject.rewards.length === 0) {
         rewardList.appendChild(<p class="text-gray text-center mt-2">No rewards added yet</p>);
       } else {
@@ -1359,58 +1222,43 @@ document.addEventListener("DOMContentLoaded", () => {
           const tile = (
             <div class="tile tile-centered">
               <div class="tile-content">
-                <div class="tile-title">{reward.display?.name || "Untitled Reward"}</div>
-                <small class="tile-subtitle text-gray">{reward.type || "Unknown type"}</small>
+                <div class="tile-title">{reward.display?.name || reward.type || "Unknown Type"}</div>
               </div>
               <div class="tile-action">
-                <div class="dropdown dropdown-right">
-                  <button class="btn btn-edit" on:click={() => setSelectedReward(reward)}>
-                    <i class="icon icon-edit"></i>
-                  </button>
-                  <button
-                    class="btn btn-delete"
-                    on:click={() => {
-                      questObject.rewards = questObject.rewards.filter(t => t !== reward);
-                      if (selectedReward === reward) {
-                        selectedReward = null;
-                        rerenderRewardDetails();
-                      }
-                      rerenderRewards();
-                    }}
-                  >
-                    <i class="icon icon-delete"></i>
-                  </button>
-                </div>
+                <button class="btn btn-edit mr-1" on:click={() => setSelectedReward(reward)}>
+                  <i class="icon icon-edit"></i>
+                </button>
+                <button
+                  class="btn btn-delete"
+                  on:click={() => {
+                    questObject.rewards = questObject.rewards.filter(t => t !== reward);
+                    if (selectedReward === reward) {
+                      selectedReward = null;
+                      rerenderRewardDetails();
+                    }
+                    rerenderRewards();
+                  }}
+                >
+                  <i class="icon icon-delete"></i>
+                </button>
               </div>
             </div>
           );
-
           rewardList.appendChild(tile);
         }
       }
-
       updateInputsForCodePreviewEvents();
     }
-    //#endregion
 
     screen.style.display = "none";
-
-    // Default to general open
     const defaultDisplayStyles: Record<string, string> = {};
     (screen.querySelector(".tab") as HTMLElement).addEventListener("click", e => {
       e.preventDefault();
-
       const target = e.target as HTMLElement;
-
       if (target.tagName === "A") {
         const tab = target.getAttribute("data-tab")!;
-
-        (screen.querySelectorAll(".tab-item a") as NodeListOf<HTMLElement>).forEach(tab => {
-          tab.classList.remove("active");
-        });
-
+        (screen.querySelectorAll(".tab-item a") as NodeListOf<HTMLElement>).forEach(t => t.classList.remove("active"));
         target.classList.add("active");
-
         (screen.querySelectorAll(".tab-content") as NodeListOf<HTMLElement>).forEach(content => {
           content.style.display = content.getAttribute("data-tab") === tab ? defaultDisplayStyles[tab] : "none";
         });
@@ -1422,57 +1270,52 @@ document.addEventListener("DOMContentLoaded", () => {
       tab.style.display = tab.getAttribute("data-tab") === "general" ? defaultDisplayStyles["general"] : "none";
     });
 
-    // Initial render
-    rerenderTriggers();
-    rerenderTriggerDetails();
+    rerenderRequirements();
+    rerenderReqDetails();
     rerenderObjectives();
     rerenderObjectiveDetails();
     rerenderRewards();
     rerenderRewardDetails();
 
     updateInputsForCodePreviewEvents();
-
     editArea.appendChild(screen);
   }
 
   function updateQuestList() {
     questList.innerHTML = "";
-    const activeId = getShownDetailScreenId();
-
     for (const id of Object.keys(state.quests)) {
-      const tile = createQuestTile(id);
-      if (id === activeId) {
-        tile.classList.add("active");
-      }
-      questList.appendChild(tile);
+      questList.appendChild(createQuestTile(id));
+    }
+  }
+
+  function updateChapterList() {
+    chapterList.innerHTML = "";
+    for (const id of Object.keys(state.chapters)) {
+      chapterList.appendChild(createChapterTile(id));
     }
   }
 
   function createEmptyQuest(id: string) {
-    console.log("Creating empty quest with id", id);
-
-    state.quests[id] = {
-      triggers: [],
-      objectives: [],
-      rewards: [],
-      display: {
-        title: "",
-        description: "",
-      },
-    };
-
+    state.quests[id] = { requirements: [], objectives: [], rewards: [], title: "", description: "" };
     updateQuestList();
+    if (isEditScreenEmpty()) showQuestEditScreen(id);
+    updateCache();
+  }
 
-    if (isEditScreenEmpty()) {
-      showQuestEditScreen(id);
-    }
-
+  function createEmptyChapter(id: string) {
+    state.chapters[id] = {};
+    updateChapterList();
+    if (isEditScreenEmpty()) showChapterEditScreen(id);
     updateCache();
   }
 
   const addQuestButton = document.querySelector("#add-quest") as HTMLButtonElement;
   addQuestButton.addEventListener("click", () => {
-    const id = Math.random().toString(36).substring(7);
-    createEmptyQuest(id);
+    createEmptyQuest("new_quest_" + Math.random().toString(36).substring(7));
+  });
+
+  const addChapterButton = document.querySelector("#add-chapter") as HTMLButtonElement;
+  addChapterButton.addEventListener("click", () => {
+    createEmptyChapter("new_chapter_" + Math.random().toString(36).substring(7));
   });
 });

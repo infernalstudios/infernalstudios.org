@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Questlog Datapack generator</title>
+    <title>Questlog Config generator</title>
     <link rel="stylesheet" href="/css/spectre.min.css" />
     <link rel="stylesheet" href="/css/spectre-icons.min.css" />
     <link rel="stylesheet" href="/css/questlog.css" />
@@ -18,39 +18,50 @@
         <div class="columns col-gapless">
           <div class="column col-sm-5 col-md-4 col-2">
             <div class="panel full-height">
-              <div class="panel-body px-0" id="quest-list"></div>
+              <div class="panel-body px-0" style="overflow-y: auto">
+                <div class="divider text-center" data-content="Chapters"></div>
+                <div id="chapter-list"></div>
+                <div class="divider text-center" data-content="Quests"></div>
+                <div id="quest-list"></div>
+              </div>
               <div class="panel-footer">
-                <button class="btn btn-primary w-100" id="add-quest"><i class="icon icon-plus"></i> Add Quest</button>
+                <div class="columns col-gapless">
+                  <button class="btn btn-primary col-6" id="add-chapter" style="border-radius: 0.1rem 0 0 0.1rem">
+                    <i class="icon icon-plus"></i> Add Chapter
+                  </button>
+                  <button class="btn btn-primary col-6" id="add-quest" style="border-radius: 0 0.1rem 0.1rem 0">
+                    <i class="icon icon-plus"></i> Add Quest
+                  </button>
+                </div>
                 <div class="columns mt-1">
-                  <button class="btn col-6" id="export-btn">Export</button>
-                  <button class="btn col-6" id="import-btn">Import</button>
+                  <button class="btn col-6" id="export-btn">Export Config</button>
+                  <button class="btn col-6" id="import-btn">Import Config</button>
                 </div>
               </div>
             </div>
           </div>
           <div class="column col-sm-7 col-md-8 col-10" id="edit-area">
             <div id="empty-state" class="empty full-height">
-              <p class="empty-title h5">No quest selected</p>
-              <p class="empty-subtitle">Edit a quest by clicking on the sidebar or create a new one!</p>
+              <p class="empty-title h5">No item selected</p>
+              <p class="empty-subtitle">Edit a quest or chapter by clicking on the sidebar or create a new one!</p>
             </div>
           </div>
         </div>
       </div>
     </main>
 
-    <!-- export modal -->
     <div class="modal" id="export-modal">
       <a class="modal-overlay" aria-label="Close"></a>
       <div class="modal-container">
         <div class="modal-header">
           <a class="btn btn-clear float-right" aria-label="Close"></a>
-          <div class="modal-title h5">Export Datapack</div>
+          <div class="modal-title h5">Export Configuration</div>
         </div>
         <div class="modal-body">
           <div class="content">
             <div class="form-group">
               <label class="form-label" for="filename">ZIP Filename</label>
-              <input class="form-input w-100" type="text" id="filename" placeholder="" />
+              <input class="form-input w-100" type="text" id="filename" placeholder="questlog_config.zip" />
               <p class="form-input-hint" id="filename-error"></p>
             </div>
             <div class="form-group">
@@ -58,11 +69,12 @@
             </div>
           </div>
         </div>
-        <div class="modal-footer text-small text-gray">Note: This tool does not validate your inputs yet</div>
+        <div class="modal-footer text-small text-gray">
+          Note: This will download a zip containing the config structure.
+        </div>
       </div>
     </div>
 
-    <!-- restore progress modal -->
     <div class="modal" id="progress-modal">
       <a class="modal-overlay" aria-label="Close"></a>
       <div class="modal-container">
@@ -81,13 +93,12 @@
       </div>
     </div>
 
-    <!-- import modal -->
     <div class="modal" id="import-modal">
       <a class="modal-overlay" aria-label="Close"></a>
       <div class="modal-container">
         <div class="modal-header">
           <a class="btn btn-clear float-right" aria-label="Close"></a>
-          <div class="modal-title h5">Import Datapack</div>
+          <div class="modal-title h5">Import Configuration</div>
         </div>
         <div class="modal-body">
           <p>This will erase all your current progress!</p>

@@ -33,7 +33,7 @@ function createObjectiveEditor(value: any, onChange: (newValue: any) => void): H
     <select
       class="form-select"
       on:change={() => {
-        currentData = { type: typeSelect.value };
+        currentData = { type: typeSelect.value, total: currentData.total || 1 };
         onChange(currentData);
         renderFields();
       }}
@@ -46,13 +46,33 @@ function createObjectiveEditor(value: any, onChange: (newValue: any) => void): H
     typeSelect.value = currentData.type;
   }
 
+  const totalInput = (
+    <input
+      class="form-input"
+      type="text"
+      value={currentData.total || 1}
+      on:input={() => {
+        currentData.total = Number(totalInput.value) || 1;
+        onChange(currentData);
+      }}
+    />
+  );
+
   renderFields();
 
   return (
     <div class="card p-2 bg-gray-50 mb-2">
       <div class="form-group">
-        <label class="form-label">Type</label>
-        {typeSelect}
+        <div class="input-group">
+          <span class="input-group-addon min-w-5em text-right">Type</span>
+          {typeSelect}
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="input-group">
+          <span class="input-group-addon min-w-5em text-right">Amount</span>
+          {totalInput}
+        </div>
       </div>
       {fieldsContainer}
     </div>
@@ -68,7 +88,7 @@ function createObjectiveListEditor(list: any[], onChange: (newList: any[]) => vo
 
     currentList.forEach((obj, index) => {
       const row = (
-        <div class="d-flex mb-2 align-items-start">
+        <div class="d-flex mb-2 align-items-start objective-list-row">
           <div style="flex-grow: 1">
             {createObjectiveEditor(obj, newVal => {
               currentList[index] = newVal;
@@ -76,7 +96,7 @@ function createObjectiveListEditor(list: any[], onChange: (newList: any[]) => vo
             })}
           </div>
           <button
-            class="btn btn-action ml-2 btn-error"
+            class="btn btn-action btn-error objective-delete-btn"
             on:click={() => {
               currentList.splice(index, 1);
               onChange(currentList);
@@ -94,7 +114,7 @@ function createObjectiveListEditor(list: any[], onChange: (newList: any[]) => vo
       <button
         class="btn btn-sm btn-primary mt-2"
         on:click={() => {
-          currentList.push({ type: "questlog:block_mine", block: "minecraft:stone" });
+          currentList.push({ type: "questlog:block_mine", block: "minecraft:stone", total: 1 });
           onChange(currentList);
           render();
         }}

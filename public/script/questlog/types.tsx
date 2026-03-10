@@ -68,33 +68,60 @@ export interface TypeDefinitionAdditionalObjectiveList extends TypeDefinitionAdd
 }
 
 export interface Quest {
-  triggers: Objective[];
+  requirements: Objective[];
   objectives: Objective[];
   rewards: Reward[];
-  display: QuestDisplay;
+  title: string;
+  description: string | object | any[];
+  sort_order?: number;
+  icon?: Renderable;
+  translatable?: boolean;
+  chapter?: string;
+  include_in_main?: boolean;
+  hidden?: boolean;
+  completed_sound?: ResourceLocation;
+  triggered_sound?: ResourceLocation;
+  toast_on_unlock?: boolean;
+  toast_on_complete?: boolean;
+  show_popup_on_unlock?: boolean;
+  background_texture?: ResourceLocation;
+  right_panel_texture?: ResourceLocation;
+  overlay?: ResourceLocation;
+  left_panel_width?: number;
+  right_panel_width?: number;
+  panel_height?: number;
+  left_panel_x_offset?: number;
+  left_panel_y_offset?: number;
+  right_panel_x_offset?: number;
+  right_panel_y_offset?: number;
+  back_button_text?: string;
+  collect_button_text?: string;
+  uncollected_text?: string;
+  collected_text?: string;
+  text_color?: string;
+  completed_text_color?: string;
+  hovered_text_color?: string;
+  title_color?: string;
+  progress_text_color?: string;
+}
+
+export interface Chapter {
+  icon?: Renderable;
+  order?: number;
+  default_chapter?: boolean;
+  hidden?: boolean;
 }
 
 export interface Objective {
   type: ResourceLocation;
-  total: number;
+  total?: number;
   display?: ObjectiveDisplay;
 }
 
 export interface Reward {
   type: ResourceLocation;
-  instant?: boolean;
+  auto_claim?: boolean;
   display?: RewardDisplay;
-}
-
-export interface QuestDisplay {
-  title: string;
-  description: string;
-  icon?: Renderable;
-  translatable?: boolean;
-  sound?: QuestSoundOptions;
-  style?: StyleOptions;
-  notification?: NotificationOptions;
-  hidden?: boolean;
 }
 
 export interface ObjectiveDisplay {
@@ -110,30 +137,8 @@ export interface RewardDisplay {
   sound?: RewardSoundOptions;
 }
 
-export interface StyleOptions {
-  peripheral?: Texture;
-  background?: Texture;
-  buttonText?: string;
-  textColor: string;
-  completedTextColor: string;
-  hoveredTextColor: string;
-  titleColor: string;
-  progressTextColor: string;
-}
-
-export interface QuestSoundOptions {
-  completed?: ResourceLocation;
-  triggered?: ResourceLocation;
-}
-
 export interface RewardSoundOptions {
   claimed?: ResourceLocation;
-}
-
-export interface NotificationOptions {
-  toastOnTrigger?: boolean;
-  toastOnComplete?: boolean;
-  popup?: boolean;
 }
 
 export type ResourceLocation = string;
